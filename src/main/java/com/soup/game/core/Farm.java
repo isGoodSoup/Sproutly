@@ -59,7 +59,7 @@ public class Farm {
     private String run() {
         cmd = reply(Localization.lang.t("game.cmd"));
         switch (cmd.toLowerCase()) {
-            case "harv" -> harvest();
+            case "harv", "harvest" -> harvest();
             case "replant" -> plant();
             case "stats" -> showStats();
             case "sell" -> sellCrops();
