@@ -2,20 +2,27 @@ package com.soup.game.core;
 
 import com.soup.game.ent.Crop;
 import com.soup.game.enums.CropID;
+import com.soup.game.service.Localization;
 
 import java.nio.file.Paths;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 
 public class Farm {
-    private static final String NAME = "Farm";
     private static final int SIZE = 16;
     private final Crop[][] crops = new Crop[SIZE][SIZE];
+    private final Map<CropID, Integer> harvest;
     private final String user;
     private final String title;
 
     public Farm() {
+        Localization.lang.setLocale(Locale.forLanguageTag("en"));
+        final String NAME = Localization.lang.t("game.farm");
         this.user = Paths.get(System.getProperty("user.home")).getFileName().toString();
-        this.title = user + "'s " + NAME;
-        System.out.println("Welcome to " + title);
+        this.title = Localization.lang.t("game.farm.title", user, NAME);
+        System.out.println(Localization.lang.t("game.welcome", title));
+        this.harvest = new LinkedHashMap<>();
         start();
     }
 
@@ -24,57 +31,68 @@ public class Farm {
         final int MAX_DAYS = 24;
         boolean isRunning = true;
 
-        for(int row = 0; row < SIZE; row++) {
-            for(int col = 0; col < SIZE; col++) {
-                crops[row][col] = new Crop(CropID.random());
-            }
-        }
+        plant();
 
         while(isRunning) {
-            System.out.println("Day = " + days);
+            String day = Localization.lang.t("game.day");
+            System.out.println(day + " " + days);
 
-            for(int row = 0; row < SIZE; row++) {
-                for(int col = 0; col < SIZE; col++) {
-                    Crop crop = crops[row][col];
-                    if (crop == null) {
-                        System.out.print("[ ] ");
-                    } else {
-                        System.out.print(crop.canHarvest() ? "[H] " :
-                                "[" + crop.getId().getName().charAt(0) + "] ");
-                    }
-                }
-                System.out.println();
-            }
-
-            for(int row = 0; row < SIZE; row++) {
-                for(int col = 0; col < SIZE; col++) {
-                    Crop crop = crops[row][col];
-                    if (crop != null) crop.grow();
-                }
-            }
-
-            for(int row = 0; row < SIZE; row++) {
-                for(int col = 0; col < SIZE; col++) {
-                    Crop crop = crops[row][col];
-                    if (crop != null && crop.canHarvest()) {
-                        System.out.println("Harvested " + crop.getId().getName() +
-                                " for " + crop.getId().getYield() + " units!");
-                        crops[row][col] = null;
-                    }
-                }
-            }
+            displayCrops();
+            updateCrops();
+            harvestCrops();
 
             days++;
             if(days > MAX_DAYS) isRunning = false;
         }
     }
 
-    private void harvest(int x, int y) {
-        Crop crop = crops[x][y];
-        if(crop.canHarvest()) {
-            System.out.println("Harvested " + crop.getId().getName() +
-                    " for " + crop.getId().getYield() + " units!");
-            crops[x][y] = null;
+    private void plant() {
+        for(int row = 0; row < SIZE; row++) {
+            for(int col = 0; col < SIZE; col++) {
+                crops[row][col] = new Crop(CropID.random());
+            }
+        }
+    }
+
+    private void displayCrops() {
+        for(int row = 0; row < SIZE; row++) {
+            for(int col = 0; col < SIZE; col++) {
+                Crop crop = crops[row][col];
+                if (crop == null) {
+                    System.out.print("[ ] ");
+                } else {
+                    System.out.print(crop.canHarvest() ? "[H] " :
+                            "[" + crop.getId().getName().charAt(0) + "] ");
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    private void updateCrops() {
+        for(int row = 0; row < SIZE; row++) {
+            for(int col = 0; col < SIZE; col++) {
+                Crop crop = crops[row][col];
+                if (crop != null) crop.grow();
+            }
+        }
+    }
+
+    private void harvestCrops() {
+        for(int row = 0; row < SIZE; row++) {
+            for(int col = 0; col < SIZE; col++) {
+                Crop crop = crops[row][col];
+                if(crop != null && crop.canHarvest()) {
+                    harvest.merge(crop.getId(), crop.getId().getYield(), Integer::sum);
+                    crops[row][col] = null;
+                }
+            }
+        }
+
+        for(Map.Entry<CropID, Integer> entries : harvest.entrySet()) {
+            System.out.println(Localization.lang.t("game.yields",
+                    entries.getKey().getName(),
+                    String.valueOf(entries.getValue())));
         }
     }
 }
