@@ -45,18 +45,24 @@ public class Farm {
         do {
             print(day + " " + days);
             update();
-            harvest();
-            switch(cmd.toLowerCase()) {
-                case "replant" -> plant();
-                case "stats" -> showStats();
-                case "sell" -> sellCrops();
-                case "buy" -> buyPlot();
-                case "end" -> {}
+            if(!cmd.equalsIgnoreCase("skip")) {
+                harvest();
             }
 
-            days++;
-            cmd = reply(Localization.lang.t("game.cmd"));
-        } while(!cmd.equalsIgnoreCase("end"));
+            do {
+                cmd = reply(Localization.lang.t("game.cmd"));
+                switch (cmd.toLowerCase()) {
+                    case "replant" -> plant();
+                    case "stats" -> showStats();
+                    case "sell" -> sellCrops();
+                    case "buy" -> buyPlot();
+                    case "skip" -> days++;
+                    case "sleep" -> sleep();
+                    case "end" -> {}
+                    default -> print("Unknown command!");
+                }
+            } while (!cmd.equalsIgnoreCase("skip") && !cmd.equalsIgnoreCase("end"));
+        } while (!cmd.equalsIgnoreCase("end"));
         showStats();
     }
 
@@ -98,6 +104,11 @@ public class Farm {
             print(Localization.lang.t("game.yields",
                     entry.getKey().getName(), entry.getValue()));
         }
+    }
+
+    private void sleep() {
+        print(Localization.lang.t("game.sleep"));
+        days++;
     }
 
     private void sellCrops() {
