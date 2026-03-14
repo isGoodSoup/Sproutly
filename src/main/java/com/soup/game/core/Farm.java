@@ -56,12 +56,13 @@ public class Farm {
                     case "stats" -> showStats();
                     case "sell" -> sellCrops();
                     case "buy" -> buyPlot();
-                    case "skip" -> days++;
                     case "sleep" -> sleep();
+                    case "skip" -> days++;
                     case "end" -> {}
                     default -> print("Unknown command!");
                 }
-            } while (!cmd.equalsIgnoreCase("skip") && !cmd.equalsIgnoreCase("end"));
+            } while (!cmd.equalsIgnoreCase("skip")
+                    && !cmd.equalsIgnoreCase("end"));
         } while (!cmd.equalsIgnoreCase("end"));
         showStats();
     }
@@ -104,10 +105,12 @@ public class Farm {
             print(Localization.lang.t("game.yields",
                     entry.getKey().getName(), entry.getValue()));
         }
+        update();
     }
 
     private void sleep() {
         print(Localization.lang.t("game.sleep"));
+        harvest();
         days++;
     }
 
