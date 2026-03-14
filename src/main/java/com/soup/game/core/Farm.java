@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Scanner;
 
 public class Farm {
     private static final int SIZE = 16;
@@ -15,6 +16,7 @@ public class Farm {
     private final Map<CropID, Integer> harvest;
     private final String user;
     private final String title;
+    private final Scanner scan;
 
     public Farm() {
         Localization.lang.setLocale(Locale.forLanguageTag("en"));
@@ -23,27 +25,26 @@ public class Farm {
         this.title = Localization.lang.t("game.farm.title", user, NAME);
         System.out.println(Localization.lang.t("game.welcome", title));
         this.harvest = new LinkedHashMap<>();
+        this.scan = new Scanner(System.in);
         start();
     }
 
     private void start() {
         int days = 0;
-        final int MAX_DAYS = 24;
-        boolean isRunning = true;
+        do {
+            plant();
+            do {
+                String day = Localization.lang.t("game.day");
+                System.out.println(day + " " + days);
 
-        plant();
+                displayCrops();
+                updateCrops();
+                harvestCrops();
 
-        while(isRunning) {
-            String day = Localization.lang.t("game.day");
-            System.out.println(day + " " + days);
-
-            displayCrops();
-            updateCrops();
-            harvestCrops();
-
-            days++;
-            if(days > MAX_DAYS) isRunning = false;
-        }
+                days++;
+            } while(!reply(Localization.lang.t("game.harvest"))
+                    .equalsIgnoreCase("no"));
+        } while(reply(Localization.lang.t("game.replant")).equalsIgnoreCase("yes"));
     }
 
     private void plant() {
@@ -94,5 +95,10 @@ public class Farm {
                     entries.getKey().getName(),
                     String.valueOf(entries.getValue())));
         }
+    }
+
+    private String reply(String q) {
+        System.out.println(q);
+        return scan.nextLine();
     }
 }
