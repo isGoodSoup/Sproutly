@@ -14,6 +14,7 @@ public class Farm {
     private final Crop[][] crops;
     private final Map<CropID, Integer> harvest;
     private final Map<String, Runnable> commands;
+    private final Map<Integer, String> market;
     private final String user;
     private final String day;
     private final String title;
@@ -40,6 +41,7 @@ public class Farm {
 
         this.harvest = new LinkedHashMap<>();
         this.commands = new LinkedHashMap<>();
+        this.market = new LinkedHashMap<>();
         populate();
 
         this.scan = new Scanner(System.in);
@@ -85,7 +87,7 @@ public class Farm {
         commands.put("show", this::update);
         commands.put("inv", this::showInventory);
         commands.put("sell", this::sellCrops);
-        commands.put("buy", this::buyPlot);
+        commands.put("buy", this::buy);
         commands.put("stats", this::showStats);
         commands.put("sleep", this::sleep);
         commands.put("skip", () -> days++);
@@ -177,26 +179,52 @@ public class Farm {
         println(Localization.lang.t("game.sold", coin));
     }
 
-    private void buyPlot() {
-        int plotCost = 131_072;
-        int increase = 2;
+    @SuppressWarnings("DuplicateBranchesInSwitch")
+    private void buy() {
+        market.clear();
+        market.put(131_072, Localization.lang.t("market.plot"));
+        market.put(65_536, Localization.lang.t("market.upgrades"));
+        market.put(4096, Localization.lang.t("market.water"));
 
-        if(coin < plotCost) {
-            println(Localization.lang.t("game.plot.fail"));
-            return;
-        }
+        do {
+            for(Map.Entry<Integer, String> entries : market.entrySet()) {
+                for (int i = 0; i < market.size(); i++) {
+                    println(i + " " + market.get(i) + " -- " + entries.getKey());
+                }
+            }
+            int r = replyNum(Localization.lang.t("market.query"));
+            switch(r) {
+                case 1 -> {
+                    int cost = 0;
+                    int increase = 2;
 
-        if(SIZE + increase > MAX_SIZE) {
-            println(Localization.lang.t("game.plot.size"));
-            return;
-        }
+                    for(Map.Entry<Integer, String> entries : market.entrySet()) {
+                        if(equals(entries.getValue(), Localization.lang.t("market.plot"))) {
+                            cost = entries.getKey();
+                        }
+                    }
 
-        int oldSize = SIZE;
-        SIZE += increase;
-        coin -= plotCost;
-        int newPlots = SIZE * SIZE - oldSize * oldSize;
-        resize();
-        println(Localization.lang.t("game.plot", coin, newPlots));
+                    if(coin < cost) {
+                        println(Localization.lang.t("game.plot.fail"));
+                        return;
+                    }
+
+                    if(SIZE + increase > MAX_SIZE) {
+                        println(Localization.lang.t("game.plot.size"));
+                        return;
+                    }
+
+                    int oldSize = SIZE;
+                    SIZE += increase;
+                    coin -= cost;
+                    int newPlots = SIZE * SIZE - oldSize * oldSize;
+                    resize();
+                    println(Localization.lang.t("game.plot", coin, newPlots));
+                }
+                case 2 -> {}
+                case 3 -> {}
+            }
+        } while(coin > 0);
     }
 
     private void showInventory() {
@@ -241,6 +269,11 @@ public class Farm {
     private String reply(String q) {
         print(q + "$ ");
         return scan.nextLine();
+    }
+
+    private int replyNum(String q) {
+        print(q + "$ ");
+        return scan.nextInt();
     }
 
     private void print(String str) {
