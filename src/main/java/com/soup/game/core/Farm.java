@@ -23,25 +23,49 @@ public class Farm {
         int days = 0;
         final int MAX_DAYS = 16;
         boolean isRunning = true;
+
+        for(int row = 0; row < SIZE; row++) {
+            for(int col = 0; col < SIZE; col++) {
+                crops[row][col] = new Crop(CropID.random());
+            }
+        }
+
         while(isRunning) {
             System.out.println("Day = " + days);
-            for(int col = 0; col < crops.length; col++) {
-                for(int row = 0; row < crops[0].length; row++) {
-                    crops[col][row] = new Crop(CropID.random());
-                    System.out.print(crops[col][row].canHarvest() ? "[H] " : "[" + crops[col][row]
-                            .getId().getName().charAt(0) + "] ");
+
+            for(int row = 0; row < SIZE; row++) {
+                for(int col = 0; col < SIZE; col++) {
+                    Crop crop = crops[row][col];
+                    if (crop == null) {
+                        System.out.print("[ ] ");
+                    } else {
+                        System.out.print(crop.canHarvest() ? "[H] " :
+                                "[" + crop.getId().getName().charAt(0) + "] ");
+                    }
                 }
                 System.out.println();
             }
 
             for(int row = 0; row < SIZE; row++) {
                 for(int col = 0; col < SIZE; col++) {
-                    harvest(row, col);
+                    Crop crop = crops[row][col];
+                    if (crop != null) crop.grow();
+                }
+            }
+
+            for(int row = 0; row < SIZE; row++) {
+                for(int col = 0; col < SIZE; col++) {
+                    Crop crop = crops[row][col];
+                    if (crop != null && crop.canHarvest()) {
+                        System.out.println("Harvested " + crop.getId().getName() +
+                                " for " + crop.getId().getYield() + " units!");
+                        crops[row][col] = null;
+                    }
                 }
             }
 
             days++;
-            if(days > MAX_DAYS) { isRunning = false; }
+            if(days > MAX_DAYS) isRunning = false;
         }
     }
 
