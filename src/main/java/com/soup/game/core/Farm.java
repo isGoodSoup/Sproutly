@@ -12,7 +12,6 @@ import java.util.*;
 public class Farm {
     private final static int MAX_SIZE = 1024;
     private final Crop[][] crops;
-    private final int[][] indices;
     private final Map<CropID, Integer> harvest;
     private final Map<String, Runnable> commands;
     private final String user;
@@ -20,6 +19,7 @@ public class Farm {
     private final String title;
     private final Scanner scan;
 
+    private int[][] indices;
     private int SIZE = 16;
     private int coin;
     private int days;
@@ -99,7 +99,6 @@ public class Farm {
                 if(dryDay > 4) {
                     print("[X] ");
                     if(crop != null) { crop.wither(); }
-                    dryDay = 0;
                     continue;
                 }
                 if(crop == null) {
@@ -163,8 +162,9 @@ public class Farm {
     }
 
     private void sleep() {
-        println(Localization.lang.t("game.sleep"));
         harvest();
+        println(Localization.lang.t("game.sleep"));
+        println(Localization.lang.t("game.coin", coin));
         days++;
         cmd = "skip";
     }
@@ -195,6 +195,7 @@ public class Farm {
         SIZE += increase;
         coin -= plotCost;
         int newPlots = SIZE * SIZE - oldSize * oldSize;
+        resize();
         println(Localization.lang.t("game.plot", coin, newPlots));
     }
 
@@ -212,6 +213,7 @@ public class Farm {
         }
         println(Localization.lang.t("game.stats.crops", totalCrops));
         println(Localization.lang.t("game.stats.days",days));
+        println(Localization.lang.t("game.stats.coin", coin));
     }
 
     private int[][] index() {
@@ -226,7 +228,12 @@ public class Farm {
         return indices;
     }
 
+    private void resize() {
+        indices = new int[SIZE * SIZE][2];
+    }
+
     private void redo() {
+        if(previousCmd.isEmpty()) { return; }
         Runnable action = commands.get(previousCmd.toLowerCase());
         if(action != null) { action.run(); }
     }
