@@ -1,10 +1,7 @@
 package com.soup.game.core;
 
 import com.soup.game.ent.Crop;
-import com.soup.game.enums.CropID;
-import com.soup.game.enums.GrowthStage;
-import com.soup.game.enums.Hydration;
-import com.soup.game.enums.Weather;
+import com.soup.game.enums.*;
 import com.soup.game.intf.Item;
 import com.soup.game.service.Inventory;
 import com.soup.game.service.Localization;
@@ -23,6 +20,7 @@ public class Farm {
     private final String day;
     private final String title;
     private final Scanner scan;
+    private Upgrades upgrades;
 
     private int[][] indices;
     private int SIZE = 4;
@@ -52,6 +50,7 @@ public class Farm {
         this.scan = new Scanner(System.in);
         this.day = Localization.lang.t("game.day");
         this.weather = Weather.SUNNY;
+        this.upgrades = Upgrades.NULL;
         start();
     }
 
