@@ -11,12 +11,13 @@ import com.soup.game.service.Localization;
 
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class Farm {
     private final static int MAX_SIZE = 1024;
     private final Crop[][] crops;
     private final Inventory inventory;
-    private final Map<String, Runnable> commands;
+    private final Map<String, Consumer<String[]>> commands;
     private final Map<Integer, String> market;
     private final String user;
     private final String day;
@@ -24,15 +25,15 @@ public class Farm {
     private final Scanner scan;
 
     private int[][] indices;
-    private int SIZE = 16;
+    private int SIZE = 4;
     private int coin;
     private int water;
     private int days;
     private int dryDay;
 
     private Weather weather;
-    private String cmd = "";
-    private String previousCmd = "";
+    private String[] previousArgs;
+    private String lastCommand = "";
 
     public Farm() {
         this.crops = new Crop[MAX_SIZE][MAX_SIZE];
@@ -56,7 +57,6 @@ public class Farm {
 
     private void start() {
         days = 0; coin = 0;
-        plant(true);
         loop();
         showStats();
     }
@@ -69,35 +69,40 @@ public class Farm {
             grow();
             update();
             do {
-                cmd = run();
-            } while (!equals(cmd, "skip") && !equals(cmd, "end"));
+                run();
+            } while (!equals(lastCommand, "skip") && !equals(lastCommand, "end"));
             resetHarvest();
-        } while (!equals(cmd, "end"));
+        } while (!equals(lastCommand, "end"));
     }
 
-    private String run() {
-        cmd = reply(user);
-        Runnable action = commands.get(cmd.toLowerCase());
-        if(action != null) { action.run(); }
-        if(!equals(cmd, ".") && !equals(cmd, "..")) {
-            previousCmd = cmd;
+    private void run() {
+        String input = reply(user).trim();
+        if(input.isEmpty()) { return; }
+        String[] parts = input.split("\\s+");
+        String command = parts[0].toLowerCase();
+        Consumer<String[]> action = commands.get(command);
+        if(action != null) {
+            action.accept(parts);
+            lastCommand = command;
+            previousArgs = parts.clone();
+        } else {
+            error("Unknown command");
         }
-        return cmd;
     }
-
     private void addCommands() {
+        commands.put("?", this::showHelp);
         commands.put(".", this::redo);
         commands.put("harvest", this::harvest);
-        commands.put("replant", () -> this.plant(false));
         commands.put("water", this::irrigate);
-        commands.put("show", this::update);
-        commands.put("inv", this::showInventory);
-        commands.put("sell", this::sellCrops);
-        commands.put("buy", this::buy);
-        commands.put("stats", this::showStats);
+        commands.put("plant", this::plant);
+        commands.put("show", args -> update());
+        commands.put("inv", args -> showInventory());
+        commands.put("sell", args -> sellCrops());
+        commands.put("buy", args -> buy());
+        commands.put("stats", args -> showStats());
         commands.put("sleep", this::sleep);
-        commands.put("skip", () -> days++);
-        commands.put("end", () -> {});
+        commands.put("skip", args -> days++);
+        commands.put("end", args -> {});
     }
 
     private void update() {
@@ -128,31 +133,47 @@ public class Farm {
         }
     }
 
-    private void harvest() {
-        List<Item> todayHarvest = new ArrayList<>();
-        for(int[] pos : index()) {
-            Crop crop = crops[pos[0]][pos[1]];
-            if(crop != null && crop.canHarvest()) {
-                todayHarvest.add(crop.getId());
-                crop.harvested();
-                if(crop.getId().regrows()) {
-                    crop.setStage(GrowthStage.SEED);
-                } else {
-                    crops[pos[0]][pos[1]] = null;
-                }
-            }
+    private void harvest(String[] args) {
+        if(args.length < 3) {
+            println(Localization.lang.t("game.harvest.usage"));
+            return;
         }
-        inventory.addAll(todayHarvest);
 
-        if(!todayHarvest.isEmpty()) {
-            Map<Item, Integer> countMap = new LinkedHashMap<>();
-            for(Item item : todayHarvest) {
-                countMap.merge(item, 1, Integer::sum);
-            }
-            for(Map.Entry<Item, Integer> e : countMap.entrySet()) {
-                println(Localization.lang.t("game.yields", e.getKey().getName(), e.getValue()));
-            }
+        int row, col;
+        try {
+            row = Integer.parseInt(args[1]);
+            col = Integer.parseInt(args[2]);
+        } catch(NumberFormatException e) {
+            error(Localization.lang.t("game.coordinates.invalid"));
+            return;
         }
+
+        if(row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
+            println(Localization.lang.t("game.coordinates.out_of_bounds"));
+            return;
+        }
+
+        Crop crop = crops[row][col];
+        if(crop == null) {
+            println(Localization.lang.t("game.harvest.nothing"));
+            return;
+        }
+
+        if(!crop.canHarvest()) {
+            println(Localization.lang.t("game.harvest.not_ready"));
+            return;
+        }
+
+        inventory.add(crop.getId());
+        crop.harvested();
+        if(crop.getId().regrows()) {
+            crop.setStage(GrowthStage.SEED);
+        } else {
+            crops[row][col] = null;
+        }
+
+        println(Localization.lang.t("game.harvest.success",
+                crop.getId().getName(), row, col));
     }
 
     private void resetHarvest() {
@@ -178,7 +199,7 @@ public class Farm {
         }
     }
 
-    private void irrigate() {
+    private void irrigate(String[] args) {
         if(water > 0) {
             for(int[] pos : index()) {
                 Crop crop = crops[pos[0]][pos[1]];
@@ -200,26 +221,42 @@ public class Farm {
         println(weather.message());
     }
 
-    @SuppressWarnings("SimplifiableBooleanExpression")
-    private void plant(boolean isFirstTime) {
-        for(int row = 0; row < SIZE; row++) {
-            for(int col = 0; col < SIZE; col++) {
-                if(crops[row][col] == null) {
-                    if(((Math.random() < 0.5) && isFirstTime) || !isFirstTime) {
-                        crops[row][col] = new Crop(CropID.random());
-                    }
-                }
-            }
+    private void plant(String[] args) {
+        if(args.length < 3) {
+            println(Localization.lang.t("game.plant.usage"));
+            return;
         }
+
+        int row, col;
+        try {
+            row = Integer.parseInt(args[1]);
+            col = Integer.parseInt(args[2]);
+        } catch(NumberFormatException e) {
+            error(Localization.lang.t("game.coordinates.invalid"));
+            return;
+        }
+
+        if(row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
+            println(Localization.lang.t("game.coordinates.out_of_bounds"));
+            return;
+        }
+
+        if(crops[row][col] != null) {
+            println(Localization.lang.t("game.plant.occupied"));
+            return;
+        }
+
+        crops[row][col] = new Crop(CropID.random());
+        println(Localization.lang.t("game.plant.success", row, col));
     }
 
-    private void sleep() {
-        harvest();
+    private void sleep(String[] args) {
+        harvest(args);
         println(Localization.lang.t("game.sleep"));
         println(Localization.lang.t("game.coin", coin));
         days++;
         updateHydration();
-        cmd = "skip";
+        lastCommand = "skip";
     }
 
     private void sellCrops() {
@@ -338,6 +375,13 @@ public class Farm {
         println(Localization.lang.t("game.stats.coin", coin));
     }
 
+    private void showHelp(String[] args) {
+        println("Available commands:");
+        for (String cmd : commands.keySet()) {
+            println(" - " + cmd);
+        }
+    }
+
     private int[][] index() {
         List<int[]> positions = new ArrayList<>();
         for(int row = 0; row < SIZE; row++) {
@@ -352,10 +396,16 @@ public class Farm {
         indices = new int[SIZE * SIZE][2];
     }
 
-    private void redo() {
-        if(previousCmd.isEmpty()) { return; }
-        Runnable action = commands.get(previousCmd.toLowerCase());
-        if(action != null) { action.run(); }
+    private void redo(String[] args) {
+        if(previousArgs == null) {
+            println("No previous command.");
+            return;
+        }
+
+        Consumer<String[]> action = commands.get(previousArgs[0]);
+        if(action != null) {
+            action.accept(previousArgs.clone());
+        }
     }
 
     private String reply(String q) {
@@ -366,6 +416,10 @@ public class Farm {
     private int replyNum(String q) {
         print(q + "$ ");
         return scan.nextInt();
+    }
+
+    private void error(String str) {
+        System.err.println(str);
     }
 
     private void print(String str) {
