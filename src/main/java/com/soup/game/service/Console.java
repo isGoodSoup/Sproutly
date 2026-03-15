@@ -2,6 +2,10 @@ package com.soup.game.service;
 
 import com.soup.game.intf.Service;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+
 /**
  * Provides basic console input/output utilities for the game.
  * <p>
@@ -28,6 +32,20 @@ public class Console {
      * </p>
      */
     public static final Console cli = new Console();
+    private final Map<String, Consumer<String[]>> commands = new LinkedHashMap<>();
+
+    /**
+     * Returns the map of game commands and their associated actions.
+     * <p>
+     * Each entry in the map consists of a command string (e.g., "plant", "harvest")
+     * mapped to a {@link java.util.function.Consumer} that defines the action
+     * executed when the command is invoked. The map preserves insertion order.
+     * </p>
+     * @return a {@link Map} of command names to their corresponding actions
+     */
+    public Map<String, Consumer<String[]>> cmd() {
+        return commands;
+    }
 
     /**
      * Prints an error message to standard error.
