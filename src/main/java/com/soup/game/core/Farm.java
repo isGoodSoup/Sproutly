@@ -1,12 +1,11 @@
 package com.soup.game.core;
 
 import com.soup.game.ent.Crop;
+import com.soup.game.ent.Player;
 import com.soup.game.enums.*;
 import com.soup.game.intf.Item;
-import com.soup.game.service.Inventory;
 import com.soup.game.service.Localization;
 
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -21,12 +20,10 @@ import java.util.function.Consumer;
 public class Farm {
     private final static int MAX_SIZE = 1024;
     private final Crop[][] crops;
-    private final Inventory inventory;
+    private final Player player;
     private final Map<String, Consumer<String[]>> commands;
     private final Map<Integer, String> market;
-    private final String user;
     private final String day;
-    private final String title;
     private final Scanner scan;
     private final List<Upgrades> upgrades;
 
@@ -48,18 +45,13 @@ public class Farm {
      * weather and upgrades. It starts the main game loop.
      */
     public Farm() {
+        Localization.lang.setLocale(Locale.forLanguageTag("en"));
         this.crops = new Crop[MAX_SIZE][MAX_SIZE];
         this.indices = new int[SIZE * SIZE][2];
-
-        Localization.lang.setLocale(Locale.forLanguageTag("en"));
-        final String NAME = Localization.lang.t("game.farm");
-        this.user = Paths.get(System.getProperty("user.home")).getFileName().toString();
-        this.title = Localization.lang.t("game.farm.title", user, NAME);
-
-        this.inventory = new Inventory();
+        this.player = new Player();
         this.commands = new LinkedHashMap<>();
         this.market = new LinkedHashMap<>();
-        addCommands();
+        this.addCommands();
 
         this.scan = new Scanner(System.in);
         this.day = Localization.lang.t("game.day");
@@ -69,7 +61,7 @@ public class Farm {
         upgrades.add(Upgrades.NULL);
 
         ASCIILogo.print();
-        println(Localization.lang.t("game.welcome", title));
+        println(Localization.lang.t("game.welcome", player.getTitle()));
         start();
     }
 
@@ -98,7 +90,7 @@ public class Farm {
      * resets harvested crops.
      */
     private void loop() {
-        do {
+        while(!equals(lastCommand, "end")) {
             println(day + " " + days);
             season();
             weather();
@@ -108,7 +100,7 @@ public class Farm {
                 run();
             } while (!equals(lastCommand, "skip") && !equals(lastCommand, "end"));
             resetHarvest();
-        } while (!equals(lastCommand, "end"));
+        }
     }
 
     /**
@@ -116,7 +108,7 @@ public class Farm {
      * prints an error if the command is unknown
      */
     private void run() {
-        String input = reply(user).trim();
+        String input = reply(player.name()).trim();
         if(input.isEmpty()) { return; }
         String[] parts = input.split("\\s+");
         String command = parts[0].toLowerCase();
@@ -197,7 +189,7 @@ public class Farm {
                 int row = pos[1];
                 int col = pos[2];
                 Crop crop = crops[row][col];
-                inventory.add(crop.getId());
+                player.getInv().add(crop.getId());
                 crop.harvested();
                 if(crop.getId().regrows()) {
                     crop.setStage(GrowthStage.SEED);
@@ -205,7 +197,7 @@ public class Farm {
                     crops[row][col] = null;
                 }
                 println(Localization.lang.t("game.yields",
-                        inventory.getQuantity(crop.getId())));
+                        player.getInv().getQuantity(crop.getId())));
             }
             return;
         }
@@ -240,7 +232,7 @@ public class Farm {
             return;
         }
 
-        inventory.add(crop.getId());
+        player.getInv().add(crop.getId());
         crop.harvested();
         if(crop.getId().regrows()) {
             crop.setStage(GrowthStage.SEED);
@@ -403,14 +395,14 @@ public class Farm {
     private void sellCrops() {
         int totalCoin = 0;
 
-        for(Map.Entry<Item, Integer> entry : new LinkedHashMap<>(inventory
+        for(Map.Entry<Item, Integer> entry : new LinkedHashMap<>(player.getInv()
                 .getAll()).entrySet()) {
             Item item = entry.getKey();
             if(item instanceof CropID c) {
                 int quantity = entry.getValue();
                 totalCoin += c.value() * quantity;
                 for(int i = 0; i < quantity; i++) {
-                    inventory.remove(c);
+                    player.getInv().remove(c);
                 }
             }
         }
@@ -517,12 +509,12 @@ public class Farm {
      * Shows all items and quantities in the player's inventory.
      */
     private void showInventory() {
-        if(inventory.isEmpty()) {
+        if(player.getInv().isEmpty()) {
             println(Localization.lang.t("game.inventory.empty"));
             return;
         }
 
-        for(Map.Entry<Item, Integer> entry : inventory.getAll().entrySet()) {
+        for(Map.Entry<Item, Integer> entry : player.getInv().getAll().entrySet()) {
             println(entry.getKey().getName() + " x" + entry.getValue());
         }
     }
@@ -533,7 +525,7 @@ public class Farm {
     private void showStats() {
         println(Localization.lang.t("game.stats"));
         int totalCrops = 0;
-        for(Map.Entry<Item, Integer> entries : inventory.getAll().entrySet()) {
+        for(Map.Entry<Item, Integer> entries : player.getInv().getAll().entrySet()) {
             totalCrops += entries.getValue();
         }
         println(Localization.lang.t("game.stats.crops", totalCrops));
