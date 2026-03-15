@@ -206,6 +206,9 @@ public class Farm {
                 crop.water(Hydration.HIGH);
                 water -= 1;
             }
+            println(Localization.lang.t("game.irrigate.success", water));
+        } else {
+            error(Localization.lang.t("game.irrigate.fail"));
         }
     }
 
