@@ -2,12 +2,14 @@ package com.soup.game.ent;
 
 import com.soup.game.enums.CropID;
 import com.soup.game.enums.GrowthStage;
+import com.soup.game.enums.Hydration;
 import com.soup.game.intf.Entity;
 
 @Entity(type = "crop")
 public final class Crop {
     private final CropID id;
     private GrowthStage stage;
+    private Hydration hydration;
     private int daysToMature;
     private int days;
     private boolean wasHarvested;
@@ -20,6 +22,7 @@ public final class Crop {
         this.days = 0;
         this.daysToMature = id.getDays();
         this.canRegrow = id.regrows();
+        this.hydration = Hydration.MID;
     }
 
     public void grow() {
