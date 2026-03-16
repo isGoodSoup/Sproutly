@@ -46,6 +46,10 @@ public final class Game {
     private String[] previousArgs;
     private String lastCommand = "foo";
 
+    private int totalCmd;
+    private float waterUsed;
+    private boolean isGameOver;
+
     /**
      * Initializes a new Farm game.
      * Sets up the farm grid, inventory, commands, market,
@@ -82,6 +86,7 @@ public final class Game {
      */
     private void start() {
         days = 0;
+        totalCmd = 0;
         loop();
         showStats();
     }
@@ -93,7 +98,7 @@ public final class Game {
      * resets harvested crops.
      */
     private void loop() {
-        while(!console().equals(lastCommand, "end")) {
+        while(!console().equals(lastCommand, "end") && !isGameOver) {
             console().println(day + " " + days, Console.GREEN);
             season();
             weather();
@@ -107,8 +112,9 @@ public final class Game {
                     days++;
                     grow();
                 }
-            } while (!doSleep(lastCommand)
-                    && !console().equals(lastCommand, "end"));
+            } while(!doSleep(lastCommand)
+                    && !console().equals(lastCommand, "end")
+                    && !isGameOver);
             resetHarvest();
         }
     }
@@ -138,6 +144,7 @@ public final class Game {
                 String command = parts[0].toLowerCase();
                 Consumer<String[]> action = console().cmd().get(command);
                 if(action != null) {
+                    totalCmd++;
                     action.accept(parts);
                     lastCommand = command;
                 } else {
@@ -171,6 +178,7 @@ public final class Game {
         console().cmd().put("inv", args -> showInventory());
         console().cmd().put("time", args -> showTime());
         console().cmd().put("sell", args -> sellCrops());
+        console().cmd().put("give", this::give);
         console().cmd().put("buy", args -> buy());
         console().cmd().put("stats", args -> showStats());
         console().cmd().put("sleep", this::sleep);
@@ -294,7 +302,7 @@ public final class Game {
             }
             sb.append("\n");
         }
-        console().println(sb.toString());
+        console().print(sb.toString());
     }
 
     /**
@@ -623,6 +631,7 @@ public final class Game {
                 tile.crop().water(Hydration.HIGH);
             }
             water -= 0.1f;
+            waterUsed += water;
             console().println(Localization.lang.t("game.irrigate.success", water),
                     Console.BRIGHT_GREEN);
         } else {
@@ -887,7 +896,7 @@ public final class Game {
                 console().println(price + spaces + name + " gold", Console.PURPLE);
             }
 
-            while(r > market.size() + 1) {
+            while(r > market.size()) {
                 r = console().replyNum(Localization.lang.t("market.query"));
             }
 
@@ -980,6 +989,50 @@ public final class Game {
         } while(player.purse() > 0 || isBuying);
     }
 
+    private void give(String[] args) {
+        if(args.length < 3) {
+            console().println(Localization.lang.t("game.give.usage"), Console.PURPLE);
+            return;
+        }
+
+        String item = args[1];
+        int quantity = Integer.parseInt(args[2]);
+
+        for(int i = 0; i < quantity; i++) {
+            CropID itemCrop;
+            for(CropID c : CropID.values()) {
+                if(console().equals(c.getName(), item)) {
+                    itemCrop = c;
+                    inventory().add(itemCrop);
+                    break;
+                }
+            }
+        }
+
+        for(int i = 0; i < quantity; i++) {
+            Upgrades upgrade;
+            for(Upgrades u : Upgrades.values()) {
+                if(console().equals(u.name().toLowerCase(), item)) {
+                    upgrade = u;
+                    upgrades.add(upgrade);
+                    break;
+                }
+            }
+        }
+
+        if(console().equals(item, "water")) {
+            water += quantity;
+        }
+
+        if(console().equals(item, "gold")) {
+            player.earn(quantity);
+        }
+
+        console().println(Localization.lang.t("game.give.success",
+                item, quantity), Console.BRIGHT_GREEN);
+        forceEnd();
+    }
+
     /**
      * Shows all items and quantities in the player's inventory.
      */
@@ -1009,13 +1062,26 @@ public final class Game {
      * Displays current game statistics: total crops, days passed, and coins.
      */
     private void showStats() {
-        console().println(Localization.lang.t("game.stats"), Console.PURPLE);
+        StringBuilder sb = new StringBuilder(Localization.lang.t("game.stats"));
+        if(isGameOver) {
+            sb.append(", Worst Ending");
+        } else if(days > 60) {
+            sb.append(", Best Ending");
+        } else if(days > 30 && days < 60) {
+            sb.append(", Good Ending");
+        } else if(days < 30) {
+            sb.append(", Normal Ending");
+        }
+        console().println(sb.toString(), Console.PURPLE);
         int totalCrops = 0;
         for(Map.Entry<Item, Integer> entries : inventory().getAll().entrySet()) {
             totalCrops += entries.getValue();
         }
+        console().println(Localization.lang.t("game.stats.cmd_ran", totalCmd), Console.PURPLE);
         console().println(Localization.lang.t("game.stats.crops", totalCrops), Console.PURPLE);
-        console().println(Localization.lang.t("game.stats.days",days), Console.PURPLE);
+        console().println(Localization.lang.t("game.stats.days", days), Console.PURPLE);
+        console().println(Localization.lang.t("game.stats.waterUsed", waterUsed), Console.PURPLE);
+        console().println(Localization.lang.t("game.stats.level", player.level()), Console.PURPLE);
         console().println(Localization.lang.t("game.stats.coin", player.purse()), Console.PURPLE);
     }
 
@@ -1073,6 +1139,13 @@ public final class Game {
         if(action != null) {
             action.accept(previousArgs.clone());
         }
+    }
+
+    private void forceEnd() {
+        isGameOver = true;
+        console().println(Localization.lang.t("game.end.ending2",
+                player.name()),Console.BRIGHT_RED);
+        lastCommand = "end";
     }
 
     /**
