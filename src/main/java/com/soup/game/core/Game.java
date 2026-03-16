@@ -13,6 +13,7 @@ import com.soup.game.world.Tile;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Represents a console-based farm game where the player can plant,
@@ -156,6 +157,8 @@ public final class Game {
     private void addCommands() {
         console().cmd().put("?", this::showHelp);
         console().cmd().put(".", this::redo);
+        console().cmd().put("for", this::forLoop);
+        console().cmd().put("while", this::whileLoop);
         console().cmd().put("harvest", this::harvest);
         console().cmd().put("rip", this::rip);
         console().cmd().put("water", this::irrigate);
@@ -167,7 +170,6 @@ public final class Game {
         console().cmd().put("time", args -> showTime());
         console().cmd().put("sell", args -> sellCrops());
         console().cmd().put("buy", args -> buy());
-        console().cmd().put("for", this::forLoop);
         console().cmd().put("stats", args -> showStats());
         console().cmd().put("sleep", this::sleep);
         console().cmd().put("end", args -> {});
@@ -303,6 +305,9 @@ public final class Game {
      * @param args the arguments passed from the console
      */
     private void forLoop(String[] args) {
+        if(!upgrades.contains(Upgrades.FOR_LOOP)) {
+            return;
+        }
         if(args.length < 3) {
             console().println(Localization.lang.t("game.for.usage"),
                     Console.PURPLE);
@@ -341,6 +346,73 @@ public final class Game {
     }
 
     /**
+     * Executes a specified command repeatedly while a given condition evaluates to true.
+     * <p>
+     * This method allows players to run in-game commands in a loop, based on certain
+     * game state conditions, such as available water or coins. The condition is
+     * re-evaluated before each iteration, so changes in game state can stop the loop.
+     * </p>
+     * <p>
+     * Usage example:
+     * <pre>
+     *   whileLoop(new String[]{"while", "water>0", "water"});
+     * </pre>
+     * This will repeatedly execute the "water" command as long as {@code water > 0}.
+     * </p>
+     * <p>
+     * Supported conditions (as of now):
+     * <ul>
+     *     <li>{@code water>0} – loops while the player has water remaining.</li>
+     *     <li>{@code coins>0} – loops while the player has more than 100 coins.</li>
+     * </ul>
+     * </p>
+     * <p>
+     * Notes:
+     * <ul>
+     *     <li>If an unknown condition is provided, the loop will not execute and an error is printed.</li>
+     *     <li>If the command is unknown or invalid, an error is printed and the loop is skipped.</li>
+     * </ul>
+     * </p>
+     *
+     * @param args an array of strings representing the loop arguments:
+     *             <ul>
+     *                 <li>args[0] – the keyword "while"</li>
+     *                 <li>args[1] – the condition name (e.g., "water>0")</li>
+     *                 <li>args[2] – the command to execute repeatedly</li>
+     *                 <li>args[3...] – optional arguments for the command</li>
+     *             </ul>
+     */
+    private void whileLoop(String[] args) {
+        if(args.length < 3) {
+            console().println(Localization.lang.t("game.while.usage"), Console.PURPLE);
+            return;
+        }
+
+        String conditionName = args[1];
+        String command = args[2];
+        String[] commandArgs = Arrays.copyOfRange(args, 2, args.length);
+        Consumer<String[]> action = console().cmd().get(command);
+
+        if(action == null) {
+            console().error("Unknown command: " + command);
+            return;
+        }
+
+        Supplier<Boolean> condition = () -> switch(conditionName) {
+            case "water>0" -> water > 0;
+            case "coins>0" -> player.purse() > 100;
+            default -> {
+                console().error("Unknown condition: " + conditionName);
+                yield false;
+            }
+        };
+
+        while(condition.get()) {
+            action.accept(commandArgs);
+        }
+    }
+
+    /**
      * Advances the growth of all crops on the farm,
      * except during dry weather.
      */
@@ -356,8 +428,45 @@ public final class Game {
     }
 
     /**
-     * Harvests a crop or multiple crops depending on arguments and upgrades.
-     * @param args command arguments (row and column indices optional)
+     * Harvests crops from the farm at a specified location or, if the player has
+     * the {@link Upgrades#HARVEST} upgrade, all harvestable crops on the farm.
+     * <p>
+     * If the "all" keyword is used with the appropriate upgrade, this method
+     * iterates over all farm tiles, adds harvested crops to the player's
+     * inventory, and either resets the crop to the {@link GrowthStage#SEED} stage
+     * (if it regrows) or clears the tile.
+     * </p>
+     * <p>
+     * If a specific tile is specified using row and column arguments, the method
+     * validates the coordinates and ensures the crop is ready for harvest.
+     * If the crop cannot be harvested yet, or the tile is empty, an error
+     * message is printed.
+     * </p>
+     * <p>
+     * Upon successful harvest:
+     * <ul>
+     *     <li>The crop is added to the player's inventory.</li>
+     *     <li>The crop's harvested state is updated.</li>
+     *     <li>If the crop regrows, its stage is reset to {@link GrowthStage#SEED}.</li>
+     *     <li>If the crop does not regrow, the tile is cleared.</li>
+     *     <li>The player gains XP associated with the crop.</li>
+     * </ul>
+     * </p>
+     *
+     * <p>
+     * Usage examples:
+     * <pre>
+     *   harvest(new String[]{"harvest", "2", "0"}); // harvests crop at row 2, column 0
+     *   harvest(new String[]{"harvest", "all"});   // harvests all crops if HARVEST upgrade unlocked
+     * </pre>
+     * </p>
+     *
+     * @param args an array of command arguments where:
+     *             <ul>
+     *                 <li>args[0] – the command name "harvest"</li>
+     *                 <li>args[1] – either the row index or the keyword "all" (if upgrade unlocked)</li>
+     *                 <li>args[2] – the column index (required if harvesting a specific tile)</li>
+     *             </ul>
      */
     private void harvest(String[] args) {
         if(args.length < 3 && upgrades.contains(Upgrades.HARVEST)
@@ -509,8 +618,41 @@ public final class Game {
     }
 
     /**
-     * Plants a crop at a specific location or across all plots if player has upgrade.
-     * @param args command arguments (row and column indices optional)
+     * Plants a crop on the farm at a specified location or across all tiles if
+     * the player has the {@link Upgrades#PLANT} upgrade and uses the "all" keyword.
+     * <p>
+     * If the "all" keyword is used with the appropriate upgrade, a new random
+     * crop is planted on every farm tile.
+     * </p>
+     * <p>
+     * When planting at a specific tile, the method validates the row and column
+     * indices, ensures the tile is within bounds, and that it is unoccupied.
+     * If the tile is already occupied, an error message is printed.
+     * </p>
+     * <p>
+     * Upon successful planting:
+     * <ul>
+     *     <li>A new {@link Crop} instance is created with a random ID based on
+     *         the current {@link Seasons}.</li>
+     *     <li>The crop is placed in a new {@link Tile} at the specified location.</li>
+     *     <li>A confirmation message is printed to the console.</li>
+     * </ul>
+     * </p>
+     *
+     * <p>
+     * Usage examples:
+     * <pre>
+     *   plant(new String[]{"plant", "2", "0"}); // plants a crop at row 2, column 0
+     *   plant(new String[]{"plant", "all"});   // plants crops on all tiles if PLANT upgrade unlocked
+     * </pre>
+     * </p>
+     *
+     * @param args an array of command arguments where:
+     *             <ul>
+     *                 <li>args[0] – the command name "plant"</li>
+     *                 <li>args[1] – either the row index or the keyword "all" (if upgrade unlocked)</li>
+     *                 <li>args[2] – the column index (required if planting a specific tile)</li>
+     *             </ul>
      */
     private void plant(String[] args) {
         if(args.length < 3 && upgrades.contains(Upgrades.PLANT) && console().equals(args[1], "all")) {
@@ -687,8 +829,9 @@ public final class Game {
     private void buy() {
         market.clear();
         market.put(100, Localization.lang.t("market.water"));
+        market.put(500, Localization.lang.t("market.for"));
         market.put(8_192, Localization.lang.t("market.plot"));
-        market.put(16_384, Localization.lang.t("market.upgrades"));
+        market.put(12_288, Localization.lang.t("market.upgrades"));
         boolean isBuying = true;
         do {
             int r = Integer.MAX_VALUE;
@@ -732,6 +875,26 @@ public final class Game {
                 }
                 case 2 -> {
                     int cost = 0;
+                    for(Map.Entry<Integer, String> entries : market.entrySet()) {
+                        if(console().equals(entries.getValue(), Localization.lang.t(
+                                "market.for"))) {
+                            cost = entries.getKey();
+                        }
+                    }
+
+                    if(player.purse() < cost) {
+                        console().println(Localization.lang.t("market.funds"),
+                                Console.BRIGHT_RED);
+                        return;
+                    }
+
+                    player.take(cost);
+                    upgrades.add(Upgrades.FOR_LOOP);
+                    console().println(Localization.lang.t("market.bought",
+                            "market.for", player.purse()), Console.BRIGHT_GREEN);
+                }
+                case 3 -> {
+                    int cost = 0;
                     int increase = 2;
 
                     for(Map.Entry<Integer, String> entries : market.entrySet()) {
@@ -761,7 +924,7 @@ public final class Game {
                     console().println(Localization.lang.t("market.bought.plot",
                             newPlots, player.purse()), Console.BRIGHT_GREEN);
                 }
-                case 3 -> {
+                case 4 -> {
                     int cost = 0;
                     for(Map.Entry<Integer, String> entries : market.entrySet()) {
                         if(console().equals(entries.getValue(), Localization.lang.t(
@@ -773,7 +936,7 @@ public final class Game {
                     upgrades.add(Upgrades.HARVEST);
                     upgrades.add(Upgrades.PLANT);
                 }
-                case 4 -> isBuying = false;
+                default -> isBuying = false;
             }
         } while(player.purse() > 0 || isBuying);
     }

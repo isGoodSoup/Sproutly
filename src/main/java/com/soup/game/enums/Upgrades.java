@@ -1,6 +1,5 @@
 package com.soup.game.enums;
 
 public enum Upgrades {
-    AUTOFARM, HARVEST, NULL, PLANT
-
+    AUTOFARM, FOR_LOOP, HARVEST, NULL, PLANT
 }
