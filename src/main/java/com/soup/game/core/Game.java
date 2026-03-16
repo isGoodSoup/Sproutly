@@ -105,11 +105,14 @@ public final class Game {
      */
     private void showEnding() {
         if(days > 60) {
-            console().println(Localization.lang.t("game.end.best", days));
+            console().println(Localization.lang.t("game.end.best", days),
+                    Console.BRIGHT_GREEN);
         } else if(days >= 15 && days < 60) {
-            console().println(Localization.lang.t("game.end.good", days));
+            console().println(Localization.lang.t("game.end.good", days),
+                    Console.BRIGHT_YELLOW);
         } else if(days < 15) {
-            console().println(Localization.lang.t("game.end.bad", days));
+            console().println(Localization.lang.t("game.end.bad", days),
+                    Console.PURPLE);
         }
     }
 
@@ -1125,6 +1128,7 @@ public final class Game {
      * </p>
      */
     private void showStats() {
+        console().println();
         StringBuilder sb = new StringBuilder(Localization.lang.t("game.stats"));
         if(isGameOver) {
             sb.append(", Worst Ending");
@@ -1135,11 +1139,13 @@ public final class Game {
         } else if(days < 15) {
             sb.append(", Bad Ending");
         }
+
         console().println(sb.toString(), Console.PURPLE);
         int totalCrops = 0;
         for(Map.Entry<Item, Integer> entries : inventory().getAll().entrySet()) {
             totalCrops += entries.getValue();
         }
+
         console().println(Localization.lang.t("game.stats.cmd_ran", totalCmd), Console.PURPLE);
         console().println(Localization.lang.t("game.stats.crops", totalCrops), Console.PURPLE);
         console().println(Localization.lang.t("game.stats.days", days), Console.PURPLE);
