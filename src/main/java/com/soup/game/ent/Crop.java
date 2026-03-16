@@ -3,7 +3,6 @@ package com.soup.game.ent;
 import com.soup.game.enums.CropID;
 import com.soup.game.enums.GrowthStage;
 import com.soup.game.enums.Hydration;
-import com.soup.game.intf.Entity;
 import com.soup.game.intf.World;
 
 /**
