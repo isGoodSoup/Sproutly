@@ -1,4 +1,4 @@
-package com.soup.game.ent;
+package com.soup.game.world;
 
 import com.soup.game.enums.CropID;
 import com.soup.game.enums.GrowthStage;

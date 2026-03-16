@@ -1,6 +1,6 @@
 package com.soup.game.core;
 
-import com.soup.game.ent.Crop;
+import com.soup.game.world.Crop;
 import com.soup.game.ent.Player;
 import com.soup.game.world.Tile;
 import com.soup.game.enums.*;
