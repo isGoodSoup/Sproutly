@@ -155,6 +155,7 @@ public final class Game {
         console().cmd().put("time", args -> showTime());
         console().cmd().put("sell", args -> sellCrops());
         console().cmd().put("buy", args -> buy());
+        console().cmd().put("for", this::forLoop);
         console().cmd().put("stats", args -> showStats());
         console().cmd().put("sleep", this::sleep);
         console().cmd().put("end", args -> {});
@@ -278,6 +279,53 @@ public final class Game {
             sb.append("\n");
         }
         console().println(sb.toString());
+    }
+
+    /**
+     * Executes a command multiple times using a for-like syntax.
+     * Usage:
+     *  for <times> <command> [args...]
+     * Example:
+     *  for 4 plant 2 0
+     *  → runs "plant 2 0" four times
+     * @param args the arguments passed from the console
+     */
+    private void forLoop(String[] args) {
+        if(args.length < 3) {
+            console().println(Localization.lang.t("game.for.usage"),
+                    Console.PURPLE);
+            return;
+        }
+
+        int times;
+        try {
+            times = Integer.parseInt(args[1]);
+            if(times <= 0) throw new NumberFormatException();
+        } catch(NumberFormatException e) {
+            console().error("Invalid number of times: " + args[1]);
+            return;
+        }
+
+        String command = args[2];
+        String[] commandArgs = Arrays.copyOfRange(args, 2, args.length);
+        Consumer<String[]> action = console().cmd().get(command);
+        if(action == null) {
+            console().error("Unknown command: " + command);
+            return;
+        }
+
+        for (int i = 0; i < times; i++) {
+            String[] internalArgs = commandArgs.clone();
+            for (int k = 1; k < internalArgs.length; k++) {
+                if(internalArgs[k].startsWith("+i")) {
+                    internalArgs[k] = String.valueOf(i);
+                }
+                if(internalArgs[k].startsWith("+j")) {
+                    internalArgs[k] = String.valueOf(i);
+                }
+            }
+            action.accept(internalArgs);
+        }
     }
 
     /**

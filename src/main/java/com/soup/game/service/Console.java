@@ -155,6 +155,7 @@ public class Console {
      */
     public int replyNum(String q) {
         print(q + "$ ");
+        scan.nextLine();
         return scan.nextInt();
     }
 }
