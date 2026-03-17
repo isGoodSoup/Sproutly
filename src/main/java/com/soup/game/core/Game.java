@@ -813,6 +813,54 @@ public final class Game {
                 Console.BRIGHT_GREEN);
     }
 
+    private void fertilize(String[] args) {
+        int row, col;
+        try {
+            row = Integer.parseInt(args[2]);
+            col = Integer.parseInt(args[3]);
+        } catch(NumberFormatException e) {
+            console().error(Localization.lang.t("game.coordinates.invalid"));
+            return;
+        }
+
+        if(args.length < 4 && upgrades.contains(Upgrades.FERTILIZER)
+                && console().equals(args[2], "all")) {
+            Fertilizer fertilizer = null;
+            for(Fertilizer f : Fertilizer.values()) {
+                if(Objects.equals(f.name(), args[1])) {
+                    fertilizer = f;
+                }
+            }
+
+            Tile tile = tiles[row][col].withFertilizer(fertilizer);
+            tiles[row][col] = tile;
+            console().println(Localization.lang.t("game.fertilize.success", row, col));
+            return;
+        }
+
+        if(args.length < 4) {
+            console().println(Localization.lang.t("game.fertilize.usage"), Console.PURPLE);
+            return;
+        }
+
+        if(row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
+            console().println(Localization.lang.t("game.coordinates.out_of_bounds"),
+                    Console.BRIGHT_RED);
+            return;
+        }
+
+        Fertilizer fertilizer = null;
+        for(Fertilizer f : Fertilizer.values()) {
+            if(Objects.equals(f.name(), args[1])) {
+                fertilizer = f;
+            }
+        }
+
+        Tile tile = tiles[row][col].withFertilizer(fertilizer);
+        tiles[row][col] = tile;
+        console().println(Localization.lang.t("game.fertilize.success", row, col));
+    }
+
     /**
      * Displays information about the crop at a specified location on the farm.
      * <p>
