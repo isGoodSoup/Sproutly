@@ -1,5 +1,6 @@
 package com.soup.game.service;
 
+import com.soup.game.core.Game;
 import com.soup.game.intf.Service;
 
 import java.util.LinkedHashMap;
@@ -63,6 +64,14 @@ public class Console {
         return commands;
     }
 
+    /**
+     * Returns the map of variables and their names
+     * <p>
+     * Each entry is a variable that can be used with the {@link Game}'s commands
+     * and its command is vastly more useful with the scripts than its own.
+     * </p>
+     * @return a {@link Map} of variables with their {@link String} names.
+     */
     public Map<String, Object> var() {
         return variables;
     }
