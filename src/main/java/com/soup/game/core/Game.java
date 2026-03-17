@@ -504,7 +504,8 @@ public final class Game {
             for(Pos pos : index()) {
                 Tile tile = tiles[pos.row()][pos.col()];
                 if(tile != null && tile.crop() != null) {
-                    tile.crop().grow(tile.soil(), tile.fertilizer());
+                    tile.crop().grow(tile.soil(), tile.fertilizer(),
+                            weather.equals(Weather.STORM) ? 2 : 1);
                 }
             }
         }

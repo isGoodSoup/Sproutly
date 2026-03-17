@@ -59,7 +59,7 @@ public final class Crop {
      * @param soil the type of soil of the tile where the crop grows from
      * @param fertilizer the fertilizer type used into the crop
      */
-    public void grow(Soil soil, Fertilizer fertilizer) {
+    public void grow(Soil soil, Fertilizer fertilizer, int steps) {
         if(!canHarvest) {
             days++;
             float soilGrowth = soil.getGrowthModifier();
@@ -74,7 +74,6 @@ public final class Crop {
                 yieldBonus += 0.8f;
             }
 
-            int steps = 1;
             if (soilGrowth >= 1.5f || soilYield >= 2.0f) {
                 steps++;
             }
