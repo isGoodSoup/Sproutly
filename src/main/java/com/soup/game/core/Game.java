@@ -80,7 +80,7 @@ public final class Game {
     private final List<Upgrades> upgrades;
     private final String day;
 
-    private int SIZE = 4;
+    private int SIZE = 2;
     private float water = 100f;
     private int days;
     private int dryDay;
