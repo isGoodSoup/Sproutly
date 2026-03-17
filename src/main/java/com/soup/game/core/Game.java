@@ -13,7 +13,6 @@ import com.soup.game.world.Tile;
 
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * <h1>farmlet</h1>
@@ -85,7 +84,7 @@ import java.util.function.Supplier;
  * @see #run()
  * @author isGoodSoup
  * @version 1.8
- * @since 1.0
+ * @since F1.0
  */
 @World
 public final class Game {
@@ -304,7 +303,6 @@ public final class Game {
         console().cmd().put(".", this::redo);
         console().cmd().put("var", this::var);
         console().cmd().put("for", this::forLoop);
-        console().cmd().put("while", this::whileLoop);
         console().cmd().put("harvest", this::harvest);
         console().cmd().put("rip", this::rip);
         console().cmd().put("water", this::irrigate);
@@ -577,8 +575,34 @@ public final class Game {
             return;
         }
 
+        if(token.equals("if")) {
+            if(pos + 3 >= tokens.length) {
+                console().println(Localization.lang.t("game.if.usage"), Console.PURPLE);
+                return;
+            }
+
+            Object rawCondition = getVar(tokens[pos + 1]);
+            boolean condition;
+
+            if(rawCondition instanceof Boolean) {
+                condition = (Boolean) rawCondition;
+            } else {
+                condition = Boolean.parseBoolean(rawCondition.toString());
+            }
+
+            if(!tokens[pos + 2].equalsIgnoreCase("then")) {
+                console().println(Localization.lang.t("game.if.usage"), Console.PURPLE);
+                return;
+            }
+
+            if(condition) {
+                execute(tokens, pos + 3, indices, depth);
+            }
+            return;
+        }
+
         Consumer<String[]> action = console().cmd().get(token);
-        if (action == null) {
+        if(action == null) {
             console().println(Localization.lang.t("game.cmd.unknown", token), Console.RED);
             return;
         }
@@ -640,59 +664,6 @@ public final class Game {
             result[k] = arg;
         }
         return result;
-    }
-
-    /**
-     * Executes a specified command repeatedly while a given condition evaluates to true.
-     * <p>
-     * This method allows players to run in-game commands in a loop, based on certain
-     * game state conditions, such as available water or coins. The condition is
-     * re-evaluated before each iteration, so changes in game state can stop the loop.
-     * </p>
-     * <p>
-     * Usage example:
-     * <pre>
-     *   whileLoop(new String[]{"while", "water>0", "water"});
-     * </pre>
-     * This will repeatedly execute the "water" command as long as {@code water > 0}.
-     * </p>
-     * @param args an array of strings representing the loop arguments:
-     *             <ul>
-     *                 <li>args[0] – the keyword "while"</li>
-     *                 <li>args[1] – the condition name (e.g., "water>0")</li>
-     *                 <li>args[2] – the command to execute repeatedly</li>
-     *                 <li>args[3...] – optional arguments for the command</li>
-     *             </ul>
-     */
-    private void whileLoop(String[] args) {
-        if(args.length < 3) {
-            console().println(Localization.lang.t("game.while.usage"), Console.PURPLE);
-            return;
-        }
-
-        String conditionName = args[1];
-        String command = args[2];
-        String[] commandArgs = Arrays.copyOfRange(args, 2, args.length);
-        Consumer<String[]> action = console().cmd().get(command);
-
-        if(action == null) {
-            console().println(Localization.lang.t("game.cmd.unknown", command),
-                    Console.RED);
-            return;
-        }
-
-        Supplier<Boolean> condition = () -> switch(conditionName) {
-            case "water>0" -> water > 0;
-            case "coins>0" -> player.purse() > 100;
-            default -> {
-                console().error("Unknown condition: " + conditionName);
-                yield false;
-            }
-        };
-
-        while(condition.get()) {
-            action.accept(commandArgs);
-        }
     }
 
     /**
