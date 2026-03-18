@@ -1,11 +1,11 @@
 package com.soup.game.world;
 
 import com.soup.game.ent.Animal;
-import com.soup.game.ent.barn.Cow;
+import com.soup.game.ent.barn.*;
+import com.soup.game.enums.AnimalType;
 import com.soup.game.intf.World;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * <h1>Barn</h1>
@@ -59,7 +59,29 @@ public class Barn {
     private final List<Animal> animals;
 
     /**
-     * Constructs a new barn and populates it with initial animals.
+     * Constructs a new barn and populates it with an initial set of animals.
+     *
+     * <p>
+     * The barn maintains a list of all animals currently present. Upon creation,
+     * this constructor initializes the animal list and calls {@link #populate()}
+     * to generate a randomized population.
+     * </p>
+     *
+     * <h3>Population Rules</h3>
+     * <ul>
+     *     <li>At least one dog is guaranteed to exist in the barn</li>
+     *     <li>The total number of animals is randomly chosen between 4 and 15</li>
+     *     <li>Additional animals are randomly selected from all available {@link AnimalType} values</li>
+     * </ul>
+     *
+     * <h3>Design Notes</h3>
+     * <ul>
+     *     <li>Population is randomized each time a barn is created to enhance replayability</li>
+     *     <li>Animals are shuffled after creation to avoid predictable ordering</li>
+     *     <li>Subclasses of {@link Animal} are instantiated according to their type</li>
+     * </ul>
+     *
+     * @see #populate()
      */
     public Barn() {
         this.animals = new ArrayList<>();
@@ -67,16 +89,51 @@ public class Barn {
     }
 
     /**
-     * Populates the barn with initial animals.
+     * Populates the barn with a randomized selection of animals.
+     *
      * <p>
-     * This method should instantiate concrete {@link Animal} subclasses
-     * and add them to the animals list.
+     * This method handles instantiation of concrete {@link Animal} subclasses
+     * according to the available {@link AnimalType} values. It guarantees that
+     * at least one dog is present and fills the rest of the barn with a random
+     * number and variety of animals.
+     * </p>
+     *
+     * <h3>Execution Details</h3>
+     * <ul>
+     *     <li>Adds at least one {@link Dog} to the barn</li>
+     *     <li>Randomly selects additional animals until a total between 4 and 15 is reached</li>
+     *     <li>Shuffles the animal list to randomize order</li>
+     *     <li>Instantiates each animal subclass based on its {@link AnimalType}</li>
+     * </ul>
+     *
+     * <h3>Design Notes</h3>
+     * <ul>
+     *     <li>Uses {@link java.util.Random} to control population size and selection</li>
+     *     <li>Supports future extension by adding new {@link AnimalType} entries</li>
+     * </ul>
+     *
+     * @see Animal
+     * @see AnimalType
      */
     private void populate() {
-        animals.add(new Cow(Animal.name()));
-        animals.add(new Cow(Animal.name()));
-        animals.add(new Cow(Animal.name()));
-        animals.add(new Cow(Animal.name()));
+        List<AnimalType> types = new ArrayList<>(Arrays.asList(AnimalType.values()));
+        animals.add(new Dog(Animal.name()));
+        animals.add(new Dog(Animal.name()));
+
+        Random random = new Random();
+        while(animals.size() < random.nextInt(4, 15)) {
+            AnimalType type = types.get(random.nextInt(types.size()));
+            switch(type) {
+                case COW -> animals.add(new Cow(Animal.name()));
+                case CHICKEN -> animals.add(new Chicken(Animal.name()));
+                case DUCK -> animals.add(new Duck(Animal.name()));
+                case GOAT -> animals.add(new Goat(Animal.name()));
+                case HORSE -> animals.add(new Horse(Animal.name()));
+                case PIG -> animals.add(new Pig(Animal.name()));
+                case SHEEP -> animals.add(new Sheep(Animal.name()));
+            }
+        }
+        Collections.shuffle(animals);
     }
 
     /**

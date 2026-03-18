@@ -240,6 +240,7 @@ public abstract class Animal {
                 products.add(product);
             }
         }
+        if(happiness < 20) { return; }
         sleep();
     }
 
