@@ -15,10 +15,9 @@ boy become farmer who inherits his small plot of land from his late grandfather.
 
 ### Features
 Plant your crops, harvest them, make a profit, expand your farm, upgrade 
-your tools, learn the f+ language--
-
-Oh yeah, the game does come with its own 
-syntax and language to mimic some of the most well known.
+your tools, take care of your animals, pet your dog(s), etc. learn the f+ 
+language-- Oh yeah, the game does come with its own 
+syntax and language to mimic some of the most well known. 
 
 ### How to play
 <pre>
