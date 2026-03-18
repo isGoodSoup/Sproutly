@@ -46,7 +46,7 @@ import java.util.List;
  * <ul>
  *     <li>The barn does not directly control animal behavior — it delegates to {@link Animal}</li>
  *     <li>Dead animals are removed eagerly each tick (no persistence)</li>
- *     <li>No upper bound on capacity is enforced (may be added later)</li>
+ *     <li>No upper bound on capacity is enforced (maybe added later)</li>
  * </ul>
  *
  * @see Animal
