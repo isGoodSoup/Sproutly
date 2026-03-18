@@ -233,7 +233,6 @@ public final class Game {
                 cmd = cmd.trim();
                 if(cmd.isEmpty()) { continue; }
                 String[] tokens = tokenize(cmd);
-//                runFor(1, tokens, new LinkedHashMap<>(), 0);
                 execute(tokens, 0, new LinkedHashMap<>(), 0);
             }
         }
@@ -458,31 +457,13 @@ public final class Game {
     }
 
     /**
-     * This method finds the for loop's String "end" and it retursn the tokens
-     * size given that end.
-     * @param tokens the amount of tokenized {@link String}
-     * @param start where in the tokens does it start
-     * @return tokens size
-     */
-    private int endFor(String[] tokens, int start) {
-        int depth = 0;
-        for (int i = start; i < tokens.length; i++) {
-            if(tokens[i].equals("for")) depth++;
-            if(tokens[i].equals("end")) {
-                if(depth == 0) { return i; }
-                depth--;
-            }
-        }
-        return tokens.length;
-    }
-
-    /**
      * Executes a command from a token stream starting at a given position.
      * <p>
      * This method performs a recursive descent over the token array. It supports:
      * </p>
      * <ul>
      *     <li>Nested {@code for} loops (e.g. {@code for 4 for 4 plant +i +j})</li>
+     *     <li>{@code while} loops (e.g. {@code while true water 0 0}</li>
      *     <li>Standard command execution via the console command registry</li>
      * </ul>
      *
@@ -512,6 +493,12 @@ public final class Game {
         if(pos >= tokens.length) { return; }
         String token = tokens[pos];
         if(token != null && token.equals("for")) {
+            if(!upgrades.contains(Upgrades.FOR_LOOP)) {
+                console().println(Localization.lang.t("game.upgrade.locked"),
+                        Console.BRIGHT_RED);
+                return;
+            }
+
             if(pos + 1 >= tokens.length) {
                 console().println(Localization.lang.t("game.for.usage"), Console.PURPLE);
                 return;
@@ -531,37 +518,22 @@ public final class Game {
                 }
             }
 
-            int bodyEnd = endFor(tokens, pos + 2);
+            int bodyEnd = tokens.length;
             String[] subTokens = Arrays.copyOfRange(tokens, pos + 2, bodyEnd);
             runFor(nestedTimes, subTokens, indices, depth);
             execute(tokens, bodyEnd + 1, indices, depth);
             return;
         }
 
-        if(token != null && token.equals("if")) {
-            if (pos + 3 >= tokens.length) {
-                console().println(Localization.lang.t("game.if.usage"), Console.PURPLE);
+        if(token != null && (token.equals("while") || token.equals("if"))) {
+            if(pos + 3 >= tokens.length) {
+                console().println(
+                        Localization.lang.t(token.equals("while") ? "game.while.usage" : "game.if.usage"),
+                        Console.PURPLE);
                 return;
             }
 
-            Object rawCondition = getVar(tokens[pos + 1]);
-            boolean condition;
-
-            if(rawCondition instanceof Boolean) {
-                condition = (Boolean) rawCondition;
-            } else {
-                condition = Boolean.parseBoolean(rawCondition.toString());
-            }
-
-            if(!tokens[pos + 2].equalsIgnoreCase("then")) {
-                console().println(Localization.lang.t("game.if.usage"), Console.PURPLE);
-                return;
-            }
-
-            if(condition) {
-                execute(tokens, pos + 3, indices, depth);
-            }
-            return;
+            // TODO
         }
 
         Consumer<String[]> action = console().cmd().get(token);
@@ -576,6 +548,37 @@ public final class Game {
         awc[0] = token;
         System.arraycopy(finalArgs, 0, awc, 1, finalArgs.length);
         action.accept(awc);
+    }
+
+    /**
+     * Evaluates an expression between two values and returns the result
+     * <p>
+     * That result may either be numeric or boolean depending on the operation.
+     * Used in both if and while since they require a condition.
+     * </p>
+     * @param leftVar value A
+     * @param op binary operator
+     * @param rightVar value B
+     * @param indices {@link Map} of indices from the {@link #execute(String[], int, Map, int)} method
+     * @return the boolean/numeric type {@link Object}
+     *
+     * @see #execute(String[], int, Map, int)
+     */
+    private Object evaluate(String leftVar, String op, String rightVar,
+                            Map<String, Integer> indices) {
+        float a = Integer.parseInt(getVar(leftVar).toString());
+        float b = Integer.parseInt(getVar(rightVar).toString());
+
+        return switch(op) {
+            case "+" -> (int) a + b;
+            case "-" -> (int) a - b;
+            case "*" -> (int) a * b;
+            case "/" -> (int) a / b;
+            case "<" -> (a < b);
+            case ">" -> (a > b);
+            case "==" -> (a == b);
+            default -> 0;
+        };
     }
 
     /**
@@ -651,6 +654,7 @@ public final class Game {
      *                 <li>args[2] must be "="</li>
      *                 <li>args[3] is the value to assign</li>
      *             </ul>
+     * @see #console()
      */
     private void var(String[] args) {
         if(args.length < 4 || !args[2].equalsIgnoreCase("=")) {
@@ -671,7 +675,6 @@ public final class Game {
         } catch (NumberFormatException e) {
             value = valueStr;
         }
-
         console().var().put(name, value);
     }
 
