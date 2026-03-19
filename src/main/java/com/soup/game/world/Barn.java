@@ -1,6 +1,7 @@
 package com.soup.game.world;
 
 import com.soup.game.ent.Animal;
+import com.soup.game.ent.Player;
 import com.soup.game.ent.barn.*;
 import com.soup.game.enums.AnimalType;
 import com.soup.game.intf.World;
@@ -34,7 +35,7 @@ import java.util.*;
  * On each game tick, {@link #update()} performs a full simulation step:
  * </p>
  * <ol>
- *     <li>Each animal is updated via {@link Animal#update()}</li>
+ *     <li>Each animal is updated via {@link Animal#update(Player)}</li>
  *     <li>Animals marked as dead are removed from the barn</li>
  * </ol>
  *
@@ -59,6 +60,7 @@ import java.util.*;
 @World(entity = "barn")
 public class Barn {
     private final List<Animal> animals;
+    private final Player player;
 
     /**
      * Constructs a new barn and populates it with an initial set of animals.
@@ -82,11 +84,12 @@ public class Barn {
      *     <li>Animals are shuffled after creation to avoid predictable ordering</li>
      *     <li>Subclasses of {@link Animal} are instantiated according to their type</li>
      * </ul>
-     *
+     * @param player player who will save items to inventory
      * @see #populate()
      */
-    public Barn() {
+    public Barn(Player player) {
         this.animals = new ArrayList<>();
+        this.player = player;
         populate();
     }
 
@@ -141,12 +144,15 @@ public class Barn {
     /**
      * Updates all animals in the barn for a single game tick:
      * <ul>
-     *     <li>Calls {@link Animal#update()} for each animal</li>
+     *     <li>Calls {@link Animal#update(Player)} for each animal</li>
+     *     <li>Passed Player saves to inventory any product the animals produce</li>
      *     <li>Removes animals that are no longer alive</li>
      * </ul>
      */
     public void update() {
-        animals.forEach(Animal::update);
+        for(Animal a : animals) {
+            a.update(player);
+        }
         breeding();
         animals.removeIf(a -> !a.isAlive());
     }

@@ -123,8 +123,8 @@ public final class Game {
     public Game() {
         Localization.lang.setLocale(Locale.forLanguageTag("en"));
         this.tiles = new Tile[MAX_SIZE][MAX_SIZE];
-        this.barn = new Barn();
         this.player = new Player();
+        this.barn = new Barn(player);
         this.market = new LinkedHashMap<>();
         this.addCommands();
 

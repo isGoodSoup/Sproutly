@@ -39,7 +39,6 @@ import java.util.List;
  * <ol>
  *     <li>{@link #feed()}</li>
  *     <li>Chance to {@link #produce()} (~20%)</li>
- *     <li>Chance to {@link #breed()} (~5%)</li>
  *     <li>{@link #sleep()}</li>
  * </ol>
  * <h2>Reproduction Model</h2>
@@ -75,7 +74,6 @@ import java.util.List;
  *     <li>{@link #feed()} — how hunger/happiness change</li>
  *     <li>{@link #sleep()} — end-of-cycle adjustments</li>
  *     <li>{@link #produce()} — product generation logic</li>
- *     <li>{@link #breed()} — reproduction logic and offspring creation</li>
  *     <li>{@link #getLocalizedName()} — display name</li>
  * </ul>
  *
@@ -241,7 +239,8 @@ public abstract class Animal {
     public abstract String getLocalizedName();
 
     /**
-     * Updates the animal's internal state for a single game tick.
+     * Updates the animal's internal state for a single game tick and
+     * saves the product to {@link Player}'s inventory.
      *
      * <p>
      * This method models autonomous behavior that does not depend on other animals.
@@ -254,8 +253,10 @@ public abstract class Animal {
      *     <li>Chance to {@link #produce()} (~20%)</li>
      *     <li>{@link #sleep()}</li>
      * </ol>
+     *
+     * @param player the {@link Player}, one and only
      */
-    public void update() {
+    public void update(Player player) {
         if(!isAlive) {
             return;
         }
@@ -264,6 +265,7 @@ public abstract class Animal {
             Product product = produce();
             if(product != null && product != Product.NONE) {
                 products.add(product);
+                player.inventory().add(product);
             }
         }
         if(happiness < 20) {
