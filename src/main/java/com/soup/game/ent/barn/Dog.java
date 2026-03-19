@@ -21,6 +21,7 @@ public class Dog extends Animal {
 
     @Override
     public void feed() {
+        super.feed();
         happy((int) (Math.random() * 10f));
     }
 

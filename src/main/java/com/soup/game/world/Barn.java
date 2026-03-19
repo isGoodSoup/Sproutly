@@ -4,6 +4,8 @@ import com.soup.game.ent.Animal;
 import com.soup.game.ent.barn.*;
 import com.soup.game.enums.AnimalType;
 import com.soup.game.intf.World;
+import com.soup.game.service.Console;
+import com.soup.game.service.Localization;
 
 import java.util.*;
 
@@ -206,5 +208,70 @@ public class Barn {
             }
         }
         animals.addAll(newborns);
+    }
+
+    /**
+     * Feeds all animals currently in the barn.
+     *
+     * <p>
+     * This method iterates through every {@link Animal} in the barn and invokes
+     * {@link Animal#feed()} on each one. The actual effect of feeding depends on
+     * the concrete implementation of the animal.
+     * </p>
+     *
+     * <h3>Execution Model</h3>
+     * <ul>
+     *     <li>Iterates over all animals in the barn</li>
+     *     <li>Calls {@link Animal#feed()} for each animal</li>
+     * </ul>
+     *
+     * <h3>Design Notes</h3>
+     * <ul>
+     *     <li>Feeding behavior (e.g., hunger reduction, happiness increase) is defined per animal</li>
+     *     <li>This method does not guarantee feeding success if {@code feed()} is probabilistic</li>
+     * </ul>
+     *
+     * @see Animal#feed()
+     */
+    public void feedAll() {
+        for(Animal a : animals) {
+            a.feed();
+        }
+    }
+
+    /**
+     * Pets all dogs in the barn, increasing their happiness.
+     *
+     * <p>
+     * This method iterates through all animals and applies a positive interaction
+     * only to instances of {@link Dog}. Each dog receives a fixed happiness boost
+     * and a localized message is printed to the console.
+     * </p>
+     *
+     * <h3>Execution Model</h3>
+     * <ul>
+     *     <li>Filters animals to instances of {@link Dog}</li>
+     *     <li>Applies a happiness increase via {@link Animal#happy(int)}</li>
+     *     <li>Outputs a localized message for each affected dog</li>
+     * </ul>
+     *
+     * <h3>Design Notes</h3>
+     * <ul>
+     *     <li>Only dogs can be petted; other animal types are ignored</li>
+     *     <li>Happiness increase is fixed at +25</li>
+     *     <li>Uses {@link Localization} for message output</li>
+     * </ul>
+     *
+     * @see Dog
+     * @see Animal#happy(int)
+     */
+    public void pet() {
+        for(Animal a : animals) {
+            if(a instanceof Dog dog) {
+                dog.happy(25);
+                Console.cli.println(Localization.lang.t(
+                        "animal.dog.pet", dog.getName()));
+            }
+        }
     }
 }
