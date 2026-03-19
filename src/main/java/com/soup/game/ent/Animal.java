@@ -142,7 +142,7 @@ public abstract class Animal {
      *
      * <h3>Probability</h3>
      * <ul>
-     *     <li>Feeding succeeds when {@code Math.random() > 0.6} (~40% chance)</li>
+     *     <li>Feeding succeeds when {@code Math.random() > 0.2} (~80% chance)</li>
      *     <li>Otherwise, no action is performed</li>
      * </ul>
      *
