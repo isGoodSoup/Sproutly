@@ -2,6 +2,7 @@ package com.soup.game.service;
 
 import com.soup.game.intf.Service;
 
+import java.util.Random;
 import java.util.Scanner;
 
 /**
@@ -30,6 +31,7 @@ public class Console {
      * </p>
      */
     public static final Console cli = new Console();
+    private static final Random random = new Random();
     private final Scanner scan = new Scanner(System.in);
 
     public static final String RESET = "\u001B[0m";

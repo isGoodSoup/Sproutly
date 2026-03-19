@@ -46,6 +46,7 @@ public class Stats {
     public int totalWater = 0;
     public int totalCmd = 0;
     public int totalCrops = 0;
+    public int totalQuests = 0;
     public boolean isGameOver = false;
 
     /**
@@ -93,6 +94,7 @@ public class Stats {
         Console.cli.println(Localization.lang.t("game.stats.crops", totalCrops), Console.PURPLE);
         Console.cli.println(Localization.lang.t("game.stats.days", days), Console.PURPLE);
         Console.cli.println(Localization.lang.t("game.stats.waterUsed", totalWater), Console.PURPLE);
+        Console.cli.println(Localization.lang.t("game.stats.quests", totalQuests), Console.PURPLE);
         Console.cli.println(Localization.lang.t("game.stats.level", player.level()), Console.PURPLE);
         Console.cli.println(Localization.lang.t("game.stats.coin", player.purse()), Console.PURPLE);
     }

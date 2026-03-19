@@ -6,6 +6,7 @@ import com.soup.game.intf.Entity;
 import com.soup.game.service.Console;
 import com.soup.game.service.Inventory;
 import com.soup.game.service.Localization;
+import com.soup.game.world.QuestLog;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public class Player {
     private final String title;
     private final String name;
     private final Inventory inventory;
+    private final QuestLog questLog;
     private final List<Upgrades> upgrades;
     private int level;
     private int experience;
@@ -40,11 +42,26 @@ public class Player {
         title = Localization.lang.t("game.farm.title", name,
                 Localization.lang.t("game.farm"));
         this.inventory = new Inventory();
+        this.questLog = new QuestLog();
         this.upgrades = new ArrayList<>();
         this.level = 1;
         this.experience = 0;
         this.nextLevel = 16;
         this.coin = 0;
+    }
+
+    /**
+     * Returns the {@link QuestLog} associated with this player.
+     * <p>
+     * The {@code QuestLog} contains all quests that the player has accepted,
+     * including active and completed quests. This allows tracking quest
+     * progress, adding new quests, or displaying them in the game's TUI.
+     * </p>
+     *
+     * @return the {@link QuestLog} of this player
+     */
+    public QuestLog quests() {
+        return questLog;
     }
 
     /**
