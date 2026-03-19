@@ -170,13 +170,17 @@ public class Executor implements Command {
      * @see #replace(String[], Map)
      */
     private void execute(String[] tokens, int pos, Map<String, Integer> indices, int depth) {
-        if(pos >= tokens.length) return;
-
+        if(pos >= tokens.length) { return; }
         String token = tokens[pos];
 
         if(token != null && token.equals("for")) {
+            if(!player.has(Upgrades.FOR_LOOP)) {
+                Console.cli.error(Localization.lang.t("game.upgrade.locked"));
+                return;
+            }
+
             if(pos + 1 >= tokens.length) {
-                Console.cli.println("Usage: for <times> <command>", Console.PURPLE);
+                Console.cli.println(Localization.lang.t("game.for.usage"), Console.PURPLE);
                 return;
             }
 

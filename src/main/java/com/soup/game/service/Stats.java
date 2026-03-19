@@ -108,11 +108,11 @@ public class Stats {
      * @param env the {@link Environment} containing the current hour and day
      * @param day a string representing the day label (e.g., "Day")
      */
-    public void showTime(Environment env, String day) {
+    public void showTime(Environment env) {
         int hour = (int) env.hours();
         int minute = (int) ((env.hours() - hour) * 60);
-        Console.cli.println(day + " " + days + " - " + String.format("%02d:%02d", hour, minute),
-                Console.CYAN);
+        Console.cli.println(Localization.lang.t("game.day") + " " +
+                        days + " - " + String.format("%02d:%02d", hour, minute),Console.CYAN);
     }
 
     /**

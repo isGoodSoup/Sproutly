@@ -34,11 +34,11 @@ public class Environment {
 
     /**
      * Initializes the environment with default values:
-     * {@link Weather#SUNNY} and {@link Seasons#WINTER}.
+     * {@link Weather#SUNNY} and {@link Seasons#SPRING}.
      */
     public Environment() {
         this.weather = Weather.SUNNY;
-        this.season = Seasons.WINTER;
+        this.season = Seasons.SPRING;
         this.dryDay = 0;
         this.hours = 0f;
     }
@@ -99,10 +99,12 @@ public class Environment {
      * </p>
      */
     public void season() {
-        if (Stats.stat.days % 30 == 0) {
-            season = season.next();
-            Console.cli.println(Localization.lang.t("game.season.new",
-                    season.getKey()), Console.PURPLE);
+        if(Stats.stat.days != 0) {
+            if(Stats.stat.days % 30 == 0) {
+                season = season.next();
+                Console.cli.println(Localization.lang.t("game.season.new",
+                        season.getKey()), Console.PURPLE);
+            }
         }
     }
 

@@ -98,7 +98,6 @@ public final class Game {
     private final Barn barn;
     private final Environment env;
     private final Market market;
-    private final String day;
 
     private final Parser parser;
     private final Registry registry;
@@ -122,11 +121,7 @@ public final class Game {
         this.executor = new Executor(player, parser, registry);
         this.gameLoop = new GameLoop(farm, barn, env, executor);
         addCommands();
-
-        this.day = Localization.lang.t("game.day");
-        Console.cli.println("Farmlet, a terminal farm", Console.PURPLE);
-        Console.cli.println(Localization.lang.t("game.welcome", player.title()),
-                Console.BRIGHT_GREEN);
+        intro();
         start();
     }
 
@@ -136,6 +131,45 @@ public final class Game {
      */
     public static void main(String[] args) {
         new Game();
+    }
+
+    /**
+     * Displays the game introduction text in the console using a typewriter effect.
+     * <p>
+     * The text is retrieved from the localization system via
+     * {@code Localization.lang.t("game.intro")}. Characters are printed in small
+     * batches (default batch size: 2) with a short delay (30ms) between each batch
+     * to simulate typing. After the intro finishes, a welcome message personalized
+     * with the player's title is displayed in bright green.
+     * </p>
+     * <p>
+     * This method blocks the calling thread while printing the text and handles
+     * {@link InterruptedException} by rethrowing it as a {@link RuntimeException}.
+     * </p>
+     * <p>
+     * Console text colors:
+     * <ul>
+     *     <li>Intro text: {@link Console#BLUE}</li>
+     *     <li>Welcome message: {@link Console#BRIGHT_GREEN}</li>
+     * </ul>
+     * </p>
+     */
+    private void intro() {
+        String intro = Localization.lang.t("game.intro");
+        int batchSize = 2;
+        for (int i = 0; i < intro.length(); i += batchSize) {
+            int end = Math.min(i + batchSize, intro.length());
+            String chunk = intro.substring(i, end);
+            Console.cli.print(chunk, Console.BLUE);
+            try {
+                Thread.sleep(30);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        Console.cli.println();
+        Console.cli.println(Localization.lang.t("game.welcome", player.title()),
+                Console.BRIGHT_GREEN);
     }
 
     /**
@@ -189,6 +223,53 @@ public final class Game {
             Console.cli.println(Localization.lang.t("game.end.bad", Stats.stat.days),
                     Console.PURPLE);
         }
+    }
+
+    /**
+     * Returns the list of all game rules currently registered in the game engine.
+     * <p>
+     * Each {@link Gamerule} in the returned list represents a configurable gameplay
+     * mechanic that can be enabled or disabled at runtime. Modifying the values of
+     * these rules affects core game behavior such as cheat availability, market access,
+     * experience gain, and weather cycles.
+     * </p>
+     * <p>
+     * The returned list is mutable; changes to the {@link Gamerule} values persist
+     * across the game session. However, adding or removing elements from the list
+     * is not recommended as it may break internal assumptions of the game engine.
+     * </p>
+     *
+     * <h2>Usage Example:</h2>
+     * <pre>{@code
+     * // Retrieve all game rules
+     * List<Gamerule> rules = game.gamerules();
+     *
+     * // Disable breeding and stop time
+     * rules.stream()
+     *      .filter(r -> r == Gamerule.ENABLE_BREEDING || r == Gamerule.ENABLE_STOP_TIME)
+     *      .forEach(r -> r.setValue(false));
+     * }</pre>
+     *
+     * @return a mutable {@link List} of {@link Gamerule} objects
+     * @since 1.0
+     */
+    private void gamerule(String[] args) {
+        if(args.length < 3) {
+            Console.cli.println(Localization.lang.t("game.gamerule.usage"), Console.PURPLE);
+            return;
+        }
+
+        String key = args[1];
+        boolean value = Boolean.parseBoolean(args[2]);
+
+        Gamerule rule = Gamerule.fromKey(key);
+        if(rule == null) {
+            Console.cli.error(Localization.lang.t("game.gamerule.notfound"));
+            return;
+        }
+        rule.setValue(value);
+        Console.cli.println(Localization.lang.t("game.gamerule.success",
+                rule.key(), rule.value()), Console.BRIGHT_GREEN);
     }
 
     /**
@@ -246,58 +327,11 @@ public final class Game {
         registry.register("view", gameLoop::update);
         registry.register("show", args -> gameLoop.update());
         registry.register("inv", args -> player.inventory().showInventory(player));
-        registry.register("time", args -> Stats.stat.showTime(env, day));
+        registry.register("time", args -> Stats.stat.showTime(env));
         registry.register("sell", args -> market.sellCrops());
         registry.register("buy", args -> market.buy(farm));
         registry.register("stats", args -> Stats.stat.showStats(player));
         registry.register("sleep", args -> gameLoop.sleep(player.purse()));
         registry.register("end", args -> {});
-    }
-
-    /**
-     * Returns the list of all game rules currently registered in the game engine.
-     * <p>
-     * Each {@link Gamerule} in the returned list represents a configurable gameplay
-     * mechanic that can be enabled or disabled at runtime. Modifying the values of
-     * these rules affects core game behavior such as cheat availability, market access,
-     * experience gain, and weather cycles.
-     * </p>
-     * <p>
-     * The returned list is mutable; changes to the {@link Gamerule} values persist
-     * across the game session. However, adding or removing elements from the list
-     * is not recommended as it may break internal assumptions of the game engine.
-     * </p>
-     *
-     * <h2>Usage Example:</h2>
-     * <pre>{@code
-     * // Retrieve all game rules
-     * List<Gamerule> rules = game.gamerules();
-     *
-     * // Disable breeding and stop time
-     * rules.stream()
-     *      .filter(r -> r == Gamerule.ENABLE_BREEDING || r == Gamerule.ENABLE_STOP_TIME)
-     *      .forEach(r -> r.setValue(false));
-     * }</pre>
-     *
-     * @return a mutable {@link List} of {@link Gamerule} objects
-     * @since 1.0
-     */
-    private void gamerule(String[] args) {
-        if(args.length < 3) {
-            Console.cli.println(Localization.lang.t("game.gamerule.usage"), Console.PURPLE);
-            return;
-        }
-
-        String key = args[1];
-        boolean value = Boolean.parseBoolean(args[2]);
-
-        Gamerule rule = Gamerule.fromKey(key);
-        if(rule == null) {
-            Console.cli.error(Localization.lang.t("game.gamerule.notfound"));
-            return;
-        }
-        rule.setValue(value);
-        Console.cli.println(Localization.lang.t("game.gamerule.success",
-                        rule.key(), rule.value()), Console.BRIGHT_GREEN);
     }
 }
