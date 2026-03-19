@@ -1,11 +1,9 @@
 package com.soup.game.ent;
 
-import com.soup.game.enums.AnimalType;
-import com.soup.game.enums.Phase;
-import com.soup.game.enums.Product;
-import com.soup.game.enums.Sex;
+import com.soup.game.enums.*;
 import com.soup.game.intf.Entity;
 import com.soup.game.service.Console;
+import com.soup.game.service.Localization;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -117,7 +115,9 @@ public abstract class Animal {
     private Phase phase;
     private int happiness;
     private int hunger;
+    private int meals;
     private boolean isAlive;
+    private boolean wasFed;
 
     public Animal(String name, Sex sex, AnimalType animalType) {
         this.name = name;
@@ -128,15 +128,41 @@ public abstract class Animal {
         this.phase = Phase.NEWBORN;
         this.happiness = 100;
         this.hunger = 0;
+        this.meals = 3;
         this.isAlive = true;
+        this.wasFed = false;
     }
 
     /**
-     * Feeds the animal, affecting its hunger and happiness.
+     * Attempts to feed the animal based on a probabilistic check.
+     *
      * <p>
-     * Concrete subclasses define specific feeding behavior.
+     * Feeding does not always occur. This method applies a random chance
+     * to determine whether feeding succeeds. If successful, {@link #food()}
+     * is invoked to apply the actual feeding effects.
+     * </p>
+     *
+     * <h3>Probability</h3>
+     * <ul>
+     *     <li>Feeding succeeds when {@code Math.random() > 0.6} (~40% chance)</li>
+     *     <li>Otherwise, no action is performed</li>
+     * </ul>
+     *
+     * <h3>Design Notes</h3>
+     * <ul>
+     *     <li>Introduces variability in animal care behavior</li>
+     *     <li>Actual effects (e.g., hunger reduction, happiness increase)
+     *         are handled by {@link #food()}</li>
+     * </ul>
+     *
+     * @see #food()
      */
-    public abstract void feed();
+    public void feed() {
+        if(!(Math.random() > 0.6f)) {
+            return;
+        }
+        food();
+    }
 
     /**
      * Makes the animal sleep, affecting its state.
@@ -233,14 +259,22 @@ public abstract class Animal {
         if(!isAlive) {
             return;
         }
-        feed();
+
         if(Math.random() > 0.8) {
             Product product = produce();
             if(product != null && product != Product.NONE) {
                 products.add(product);
             }
         }
-        if(happiness < 20) { return; }
+        if(happiness < 20) {
+            console().println(Localization.lang.t("animal.unhappy", getName(),
+                            getLocalizedName()), Console.PURPLE);
+        }
+
+        if(hunger > 60 || !wasFed || meals >= 2) {
+            console().println(Localization.lang.t("animal.hungry", getName(),
+                            getLocalizedName(), Console.BRIGHT_RED));
+        }
         sleep();
     }
 
@@ -365,7 +399,64 @@ public abstract class Animal {
         phase = phase.next();
     }
 
+    /**
+     * Represents the total meals an animal has (3) and how per time fed
+     * this method gets called and {@link #meals} is reduced, therefore
+     * tracking what the {@link Animal} has per day. To track if the animal
+     * was fed at all during the day, a {@link #fed()} method is used.
+     * <p>
+     * When is < 0, it gets adjusted to said number.
+     * </p>
+     *
+     * @see #fed()
+     */
+    public void food() {
+        if(meals < 0) {
+            meals = 0;
+        } else {
+            meals -= 1;
+            fed();
+        }
+    }
+
+    /**
+     * Method to track if the {@link Animal} was fed at all during the day,
+     * gets called by {@link #food()} along with the meal tracking.
+     *
+     * @see #food()
+     */
+    public void fed() {
+        wasFed = true;
+    }
+
+    /**
+     * Is the Animal alive?
+     * @return true if yes, false otherwise
+     */
     public boolean isAlive() {
         return isAlive;
+    }
+
+    /**
+     * Was the {@link Animal} fed today? This boolean is referenced once a day,
+     * once per tick, through {@link #fed}.
+     * @return if the Animal was fed today, then it returns true, false otherwise
+     * @see #fed
+     */
+    public boolean wasFedToday() {
+        return wasFed;
+    }
+
+    /**
+     * Returns the console service used for input/output operations.
+     * <p>
+     * This method provides access to the shared singleton instance
+     * of {@link Console} used throughout the application for printing
+     * messages and interacting with the command-line interface.
+     * </p>
+     * @return the global console service instance
+     */
+    private Console console() {
+        return Console.cli;
     }
 }

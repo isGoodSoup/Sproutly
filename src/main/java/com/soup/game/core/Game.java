@@ -337,6 +337,8 @@ public final class Game {
         console().cmd().put("water", this::irrigate);
         console().cmd().put("plant", this::plant);
         console().cmd().put("fertilize", this::fertilize);
+        console().cmd().put("feed", args -> barn.feedAll());
+        console().cmd().put("pet", args -> barn.pet());
         console().cmd().put("get", this::get);
         console().cmd().put("view", this::update);
         console().cmd().put("show", args -> update());
