@@ -350,6 +350,54 @@ public class Executor implements Command {
     }
 
     /**
+     * Assigns a value to a named variable in the console's variable store.
+     * <p>
+     * The expected command format is: <code>var &lt;name&gt; = &lt;value&gt;</code>.
+     * Supports numeric values (integer or decimal) and strings. Numeric strings
+     * are automatically parsed into {@link Integer} or {@link Double}.
+     * <p>
+     * Example usage:
+     * <pre>
+     * var times = 6
+     * var playerName = John
+     * </pre>
+     *
+     * @param args the command arguments, where
+     *             <ul>
+     *                 <li>args[1] is the variable name</li>
+     *                 <li>args[2] must be "="</li>
+     *                 <li>args[3] is the value to assign</li>
+     *             </ul>
+     * @see Console
+     */
+    public void var(String[] args) {
+        if(args.length < 4 || !args[2].equalsIgnoreCase("=")) {
+            Console.cli.println(Localization.lang.t("game.var.usage"), Console.PURPLE);
+            return;
+        }
+
+        String name = args[1];
+        String valueStr = args[3];
+        Object value;
+
+        if(args.length == 6 && args[4].matches("[+\\-*/]")) {
+            value = evaluate(args[3], args[4], args[5]
+            );
+        } else {
+            try {
+                if(valueStr.contains(".")) {
+                    value = Double.parseDouble(valueStr);
+                } else {
+                    value = Integer.parseInt(valueStr);
+                }
+            } catch (NumberFormatException e) {
+                value = valueStr;
+            }
+        }
+        registry.setVariable(name, value);
+    }
+
+    /**
      * Repeats the previously executed command.
      * <p>
      * If there was a previous command, it is retrieved from storage and
