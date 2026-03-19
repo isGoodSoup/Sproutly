@@ -364,6 +364,34 @@ public final class Game {
         gamerules.addAll(Arrays.asList(Gamerule.values()));
     }
 
+    /**
+     * Returns the list of all game rules currently registered in the game engine.
+     * <p>
+     * Each {@link Gamerule} in the returned list represents a configurable gameplay
+     * mechanic that can be enabled or disabled at runtime. Modifying the values of
+     * these rules affects core game behavior such as cheat availability, market access,
+     * experience gain, and weather cycles.
+     * </p>
+     * <p>
+     * The returned list is mutable; changes to the {@link Gamerule} values persist
+     * across the game session. However, adding or removing elements from the list
+     * is not recommended as it may break internal assumptions of the game engine.
+     * </p>
+     *
+     * <h2>Usage Example:</h2>
+     * <pre>{@code
+     * // Retrieve all game rules
+     * List<Gamerule> rules = game.gamerules();
+     *
+     * // Disable breeding and stop time
+     * rules.stream()
+     *      .filter(r -> r == Gamerule.ENABLE_BREEDING || r == Gamerule.ENABLE_STOP_TIME)
+     *      .forEach(r -> r.setValue(false));
+     * }</pre>
+     *
+     * @return a mutable {@link List} of {@link Gamerule} objects
+     * @since 1.0
+     */
     private void gamerule(String[] args) {
         if(args.length < 3) {
             console().println(Localization.lang.t("game.gamerule.usage"), Console.PURPLE);
