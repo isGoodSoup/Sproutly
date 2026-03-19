@@ -156,7 +156,7 @@ public abstract class Animal {
      * @see #food()
      */
     public void feed() {
-        if(!(Math.random() > 0.6f)) {
+        if(!(Math.random() > 0.2f)) {
             return;
         }
         food();
