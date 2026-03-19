@@ -88,6 +88,7 @@ import java.util.function.Consumer;
  * @since 1.0
  */
 @World
+@SuppressWarnings("all")
 public final class Game {
     private static final int MAX_SIZE = 512;
     private static final float HOURS = 24f;
@@ -628,7 +629,7 @@ public final class Game {
             String op = tokens[pos + 2];
             String right = tokens[pos + 3];
 
-            Object result = evaluate(left, op, right, indices);
+            Object result = evaluate(left, op, right);
             if(!(result instanceof Boolean)) {
                 console().error(Localization.lang.t("game.error.condition"));
                 return;
@@ -668,13 +669,11 @@ public final class Game {
      * @param leftVar value A
      * @param op binary operator
      * @param rightVar value B
-     * @param indices {@link Map} of indices from the {@link #execute(String[], int, Map, int)} method
      * @return the boolean/numeric type {@link Object}
      *
      * @see #execute(String[], int, Map, int)
      */
-    private Object evaluate(String leftVar, String op, String rightVar,
-                            Map<String, Integer> indices) {
+    private Object evaluate(String leftVar, String op, String rightVar) {
         Object leftValue = getVar(leftVar);
         Object rightValue = getVar(rightVar);
         if(leftValue == null) { leftValue = leftVar; }
@@ -787,8 +786,8 @@ public final class Game {
         Object value;
 
         if(args.length == 6 && args[4].matches("[+\\-*/]")) {
-            value = evaluate(args[3], args[4], args[5],
-                    new LinkedHashMap<>());
+            value = evaluate(args[3], args[4], args[5]
+            );
         } else {
             try {
                 if(valueStr.contains(".")) {
