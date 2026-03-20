@@ -106,12 +106,12 @@ import java.util.List;
 @Entity
 @SuppressWarnings("all")
 public abstract class Animal {
-    private final SwingPanel panel;
     private final String name;
     private final Sex sex;
     private final AnimalType animalType;
     private final List<Product> products;
     private final List<Animal> children;
+    private SwingPanel panel;
     private int weight;
     private int height;
     private Enum<?> trait;
@@ -138,7 +138,17 @@ public abstract class Animal {
     }
 
     public Animal(String name, Sex sex, AnimalType animalType) {
-        this(null, name, sex, animalType);
+        this.name = name;
+        this.animalType = animalType;
+        this.sex = sex;
+        this.products = new ArrayList<>();
+        this.children = new ArrayList<>();
+        this.phase = Phase.NEWBORN;
+        this.happiness = 100;
+        this.hunger = 0;
+        this.meals = 3;
+        this.isAlive = true;
+        this.wasFed = false;
     }
 
     /**
