@@ -440,7 +440,6 @@ public class Executor implements Command {
 
             panel.append(Localization.lang.t("game.give.success",
                     item, quantity), Colors.BRIGHT_GREEN);
-//            forceEnd();
         }
     }
 

@@ -57,11 +57,11 @@ public class Stats {
     }
 
     public static void init(SwingPanel panel) {
-        if (instance == null) instance = new Stats(panel);
+        if(instance == null) { instance = new Stats(panel); }
     }
 
     public static Stats stat() {
-        if (instance == null) throw new IllegalStateException("Stats not initialized");
+        if(instance == null) { throw new IllegalStateException("Stats not initialized"); }
         return instance;
     }
 

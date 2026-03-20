@@ -1,5 +1,6 @@
 package com.soup.game.world;
 
+import com.soup.game.core.GameLoop;
 import com.soup.game.ent.Player;
 import com.soup.game.enums.CropID;
 import com.soup.game.enums.Fertilizer;
@@ -41,6 +42,7 @@ import java.util.function.Consumer;
 @World
 public class Market {
     private final SwingPanel panel;
+    private final GameLoop gameLoop;
     private final Map<Integer, String> market;
     private final Player player;
 
@@ -50,8 +52,9 @@ public class Market {
      * @param panel  render layer
      * @param player the player who will interact with this market
      */
-    public Market(SwingPanel panel, Player player) {
+    public Market(SwingPanel panel, GameLoop gameLoop, Player player) {
         this.panel = panel;
+        this.gameLoop = gameLoop;
         this.market = new LinkedHashMap<>();
         this.player = player;
     }
@@ -135,17 +138,21 @@ public class Market {
                 .max(Integer::compare).orElse(0);
 
         List<Map.Entry<Integer, String>> items = new ArrayList<>(market.entrySet());
-        for (int i = 0; i < items.size(); i++) {
+        for(int i = 0; i < items.size(); i++) {
             Map.Entry<Integer, String> entry = items.get(i);
             String spaces = " ".repeat(maxPriceWidth - entry.getKey().toString().length() + 2);
-            panel.append((i + 1) + ". " + entry.getKey() + " gold" + spaces + entry.getValue() + "\n", Colors.PURPLE);
+            panel.append((i + 1) + ". " + entry.getKey() + " gold" + spaces + entry.getValue(), Colors.MAGENTA);
         }
 
         panel.setCommandListener(line -> {
+            if(line.equalsIgnoreCase("exit")) {
+                panel.setCommandListener(gameLoop);
+                return;
+            }
             try {
                 int choice = Integer.parseInt(line.trim());
                 if(choice < 1 || choice > items.size()) {
-                    panel.append(Localization.lang.t("game.error.selection") + "\n", Colors.BRIGHT_RED);
+                    panel.append(Localization.lang.t("game.error.selection"), Colors.BRIGHT_RED);
                     return;
                 }
                 purchase(farm, choice);
@@ -153,7 +160,7 @@ public class Market {
                     onComplete.accept(choice);
                 }
             } catch (NumberFormatException e) {
-                panel.append(Localization.lang.t("game.error.number") + "\n", Colors.BRIGHT_RED);
+                panel.append(Localization.lang.t("game.error.number"), Colors.BRIGHT_RED);
             }
         });
     }

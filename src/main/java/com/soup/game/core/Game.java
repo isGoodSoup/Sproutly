@@ -110,12 +110,12 @@ public final class Game {
         this.env = new Environment(this.panel);
         this.farm = new Farm(this.panel, player, env);
         this.barn = new Barn(this.panel, player);
-        this.market = new Market(this.panel, player);
 
         this.parser = new Parser();
         this.registry = new Registry();
         this.executor = new Executor(this.panel, player, parser, registry);
         this.gameLoop = new GameLoop(this, panel, farm, barn, env, executor);
+        this.market = new Market(this.panel, gameLoop, player);
         Stats.init(panel);
         addCommands();
         panel.setCommandListener(command -> executor.run(command));

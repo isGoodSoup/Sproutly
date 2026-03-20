@@ -89,8 +89,8 @@ public class GameLoop implements CommandListener {
      * </p>
      */
     public void start() {
-        panel.append("\n" + Localization.lang.t("game.day") + " " +
-                Stats.stat().days + "\n", Colors.GREEN);
+        panel.append(Localization.lang.t("game.day") + " " +
+                Stats.stat().days, Colors.GREEN);
         env.season();
         env.weather();
         update();
@@ -132,12 +132,12 @@ public class GameLoop implements CommandListener {
     private void game(String command) {
         executor.run(command);
         env.advanceTime(TIME_INCREMENT);
-        if (env.hours() >= HOURS_PER_DAY) {
+        if(env.hours() >= HOURS_PER_DAY) {
             env.hours(0f);
             Stats.stat().days++;
             farm.grow();
             panel.append(Localization.lang.t("game.day") + " "
-                    + Stats.stat().days + "\n", Colors.GREEN);
+                    + Stats.stat().days, Colors.GREEN);
             env.season();
             env.weather();
         }
@@ -279,5 +279,6 @@ public class GameLoop implements CommandListener {
         panel.append(Localization.lang.t("game.coin", playerCoins),
                 Colors.YELLOW);
         updateHydration();
+        game("");
     }
 }

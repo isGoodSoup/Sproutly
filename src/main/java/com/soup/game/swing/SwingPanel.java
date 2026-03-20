@@ -149,7 +149,7 @@ public class SwingPanel extends JPanel {
      * @param color the echoed command's color
      */
     private void process(String command, Color color) {
-        append("\n" + "$ " + command, color);
+        append("$ " + command, color);
     }
 
     /**
@@ -164,7 +164,7 @@ public class SwingPanel extends JPanel {
      */
     public void append(String text, Color color) {
         SwingUtilities.invokeLater(() -> {
-            append(text, color, 15, null);
+            append("\n"+ text, color, 15, null);
         });
     }
 

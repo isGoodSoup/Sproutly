@@ -594,7 +594,7 @@ public class Farm {
         if(tile != null && tile.crop() != null) {
             String id = tile.crop().getId().getName();
             panel.append(Localization.lang.t("game.get_crop", id, row, col),
-                    Colors.PURPLE);
+                    Colors.MAGENTA);
         }
     }
     
