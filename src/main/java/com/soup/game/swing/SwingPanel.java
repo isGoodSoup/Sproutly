@@ -4,24 +4,92 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.InputStream;
+import java.util.*;
 
+/**
+ * <h1>SwingPanel</h1>
+ *
+ * A terminal-style UI component built using Swing for rendering game output
+ * and handling user input. This panel simulates a console environment with
+ * a typewriter effect, colorized text, and sequential message rendering.
+ *
+ * <p>
+ * The panel consists of:
+ * <ul>
+ *     <li>A {@link JTextPane} ({@code gameLog}) for styled, colored output</li>
+ *     <li>A {@link JTextField} ({@code inputField}) for user command input</li>
+ *     <li>A {@link JScrollPane} wrapper for scrollable output</li>
+ * </ul>
+ * </p>
+ *
+ * <h2>Rendering Model</h2>
+ * <p>
+ * Text is rendered using a typewriter animation implemented via
+ * {@link javax.swing.Timer}. Each character is appended incrementally
+ * to the document with a configurable delay.
+ * </p>
+ *
+ * <p>
+ * To prevent overlapping animations and ensure deterministic output,
+ * a FIFO queue ({@link Queue}) is used. If a render operation is already
+ * in progress, new requests are enqueued and executed sequentially.
+ * </p>
+ *
+ * <h2>Threading</h2>
+ * <p>
+ * All UI updates are executed on the Swing Event Dispatch Thread (EDT)
+ * via {@link SwingUtilities#invokeLater(Runnable)} to maintain thread safety.
+ * </p>
+ *
+ * <h2>Styling</h2>
+ * <p>
+ * The panel uses a custom monospaced font (JetBrains Mono if available)
+ * and a dark theme:
+ * <ul>
+ *     <li>Background: black</li>
+ *     <li>Foreground: white</li>
+ *     <li>Custom colors supported via {@link java.awt.Color}</li>
+ * </ul>
+ * </p>
+ *
+ * <h2>Input Handling</h2>
+ * <p>
+ * User input is captured via the {@code inputField}. When the user presses Enter,
+ * the input is processed and appended to the log with a prompt prefix.
+ * </p>
+ *
+ * <h2>Usage</h2>
+ * <pre>{@code
+ * SwingPanel panel = new SwingPanel(frame);
+ * panel.append("Hello world", Color.GREEN);
+ * }</pre>
+ *
+ * @author isGoodSoup
+ * @since 2.0
+ */
 @SuppressWarnings("all")
 public class SwingPanel extends JPanel {
     private static final Logger log = LoggerFactory.getLogger(SwingPanel.class);
     private final JFrame frame;
     private final JScrollPane scrollPane;
-    private final JTextArea gameLog;
+    private final JTextPane gameLog;
     private final JTextField inputField;
+    private final Queue<Runnable> queue = new LinkedList<>();
     private Font font;
+
+    private boolean isTyping = false;
 
     public SwingPanel(JFrame frame) {
         this.frame = frame;
-        this.gameLog = new JTextArea();
+        this.gameLog = new JTextPane();
         this.scrollPane = new JScrollPane(gameLog);
         this.inputField = new JTextField();
         setLayout(new BorderLayout());
@@ -37,8 +105,6 @@ public class SwingPanel extends JPanel {
 
         final int PADDING = 15;
         gameLog.setEditable(false);
-        gameLog.setLineWrap(true);
-        gameLog.setWrapStyleWord(true);
         gameLog.setFont(font);
         gameLog.setBackground(Color.BLACK);
         gameLog.setForeground(Color.WHITE);
@@ -51,8 +117,6 @@ public class SwingPanel extends JPanel {
         inputField.setForeground(Color.WHITE);
         inputField.setCaretColor(Color.WHITE);
         inputField.setBorder(null);
-
-        scrollPane.setBorder(null);
         gameLog.setBorder(new EmptyBorder(PADDING, PADDING, PADDING, PADDING));
 
         add(scrollPane, BorderLayout.CENTER);
@@ -60,30 +124,106 @@ public class SwingPanel extends JPanel {
 
         inputField.addActionListener(e -> {
             String command = inputField.getText();
+            Color color = inputField.getForeground();
             inputField.setText("");
-            process(command);
+            process(command, color);
         });
     }
 
-    private void process(String command) {
-        appendToLog("$ " + command);
+    private void process(String command, Color color) {
+        append("$ " + command, color);
     }
 
-    public void appendToLog(String text) {
+    /**
+     * Appends text to the output using the default typewriter delay.
+     * <p>
+     * This method ensures execution on the EDT and delegates to the
+     * queued rendering system.
+     * </p>
+     *
+     * @param text  the text to render
+     * @param color the color of the text
+     */
+    public void append(String text, Color color) {
+        SwingUtilities.invokeLater(() -> {
+            append(text, color, 15, null);
+        });
+    }
+
+    /**
+     * Appends text to the output with a typewriter effect.
+     * <p>
+     * If another rendering operation is currently in progress, this request
+     * is queued and executed once the current animation completes.
+     * </p>
+     *
+     * @param text     the text to render
+     * @param color    the color of the text
+     * @param delay    delay in milliseconds between each character
+     * @param callback optional callback executed after rendering completes
+     */
+    public void append(String text, Color color, int delay, Runnable callback) {
+        Runnable task = () -> typing(text, color, delay, callback);
+        if(isTyping) {
+            queue.add(task);
+        } else {
+            task.run();
+        }
+    }
+
+    /**
+     * Extraction of Timer logic into a separate method which creates the
+     * typewriter effect.
+     * <h5>Note</h5>
+     * <p>
+     * The separation of concerns was in order to fix a major bug I was having
+     * on the printing overlapping each other and calling thousands of Timers
+     * per tick.
+     * </p>
+     * @param text the text to print
+     * @param color the chosen color
+     * @param delay the delay in ms
+     * @param callback the runnable callback
+     */
+    private void typing(String text, Color color, int delay, Runnable callback) {
+        isTyping = true;
+
+        StyledDocument doc = gameLog.getStyledDocument();
         final int[] index = {0};
-        Timer timer = new Timer(30, null);
-        timer.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (index[0] < text.length()) {
-                    gameLog.append(String.valueOf(text.charAt(index[0])));
-                    gameLog.setCaretPosition(gameLog.getDocument().getLength());
-                    index[0]++;
-                } else {
-                    ((Timer)e.getSource()).stop();
+
+        Style style = gameLog.addStyle("textStyle", null);
+        StyleConstants.setForeground(style, color);
+
+        Timer timer = new Timer(delay, null);
+        timer.addActionListener(e -> {
+            if (index[0] < text.length()) {
+                try {
+                    doc.insertString(doc.getLength(),
+                            String.valueOf(text.charAt(index[0])), style);
+                    gameLog.setCaretPosition(doc.getLength());
+                } catch (BadLocationException ex) {
+                    ex.printStackTrace();
+                }
+                index[0]++;
+            } else {
+                timer.stop();
+                isTyping = false;
+                if(callback != null) { callback.run(); }
+                if(!queue.isEmpty()) {
+                    queue.poll().run();
                 }
             }
         });
         timer.start();
+    }
+
+    /**
+     * Requests focus for the input field.
+     * <p>
+     * This is executed on the EDT to ensure proper focus behavior.
+     * </p>
+     */
+    public void focusInput() {
+        SwingUtilities.invokeLater(() -> inputField.requestFocusInWindow());
     }
 }
