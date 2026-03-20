@@ -66,7 +66,8 @@ public class QuestLog {
      */
     public void show() {
         for(Quest q : quests) {
-            panel.append(q.name() + " " + q.required(), Colors.BLUE);
+            panel.append(q.type() + " " + q.required() + " "
+                    + q.item().getName(), Colors.BLUE);
         }
     }
 

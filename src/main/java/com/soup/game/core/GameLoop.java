@@ -1,19 +1,16 @@
 package com.soup.game.core;
 
 import com.soup.game.cmd.Executor;
+import com.soup.game.ent.NPC;
 import com.soup.game.enums.Hydration;
+import com.soup.game.enums.QuestType;
 import com.soup.game.intf.CommandListener;
-import com.soup.game.service.Colors;
-import com.soup.game.service.Localization;
-import com.soup.game.service.Pos;
-import com.soup.game.service.Stats;
+import com.soup.game.service.*;
 import com.soup.game.swing.SwingPanel;
-import com.soup.game.world.Barn;
-import com.soup.game.world.Environment;
-import com.soup.game.world.Farm;
-import com.soup.game.world.Tile;
+import com.soup.game.world.*;
 
 import java.awt.*;
+import java.util.Random;
 
 /**
  * <h1>Game Loop</h1>
@@ -48,6 +45,7 @@ import java.awt.*;
  * @since 2.0
  */
 public class GameLoop implements CommandListener {
+    private static final Random random = new Random();
     private static final float HOURS_PER_DAY = 24f;
     private static final float TIME_INCREMENT = 0.2f;
     private static final float DAY_START_HOUR = 6f;
@@ -58,6 +56,7 @@ public class GameLoop implements CommandListener {
     private final Barn barn;
     private final Environment env;
     private final Executor executor;
+    private final QuestLog questLog;
     private String lastCommand;
 
     /**
@@ -76,7 +75,9 @@ public class GameLoop implements CommandListener {
         this.barn = barn;
         this.env = env;
         this.executor = executor;
+        this.questLog = new QuestLog(panel);
         panel.setCommandListener(this);
+        NPCFactory.factory.build();
     }
 
     /**
@@ -97,6 +98,15 @@ public class GameLoop implements CommandListener {
         update();
     }
 
+    /**
+     * Callback triggered when a player enters a command in the UI.
+     * <p>
+     * If the game is over, displays a message and ignores further input.
+     * Otherwise, forwards the command to {@link #game(String)} for processing.
+     * </p>
+     *
+     * @param command the command string entered by the player
+     */
     @Override
     public void onCommand(String command) {
         if(Stats.stat().isGameOver) {
@@ -106,8 +116,31 @@ public class GameLoop implements CommandListener {
         game(command);
     }
 
+    /**
+     * Processes a single player command and advances the game state.
+     * <p>
+     * This method runs the given command via the {@link Executor}, advances
+     * the game time by {@link #TIME_INCREMENT}, updates the environment,
+     * grows crops at day end, updates animals, and refreshes the farm display.
+     * If the command is "end", the game is terminated and the ending is shown.
+     * </p>
+     *
+     * @param command the command string entered by the player
+     * @see Executor
+     * @see Environment
+     * @see Barn
+     * @see Farm
+     */
     private void game(String command) {
         executor.run(command);
+        if(Math.random() > 0.8) {
+            NPC npc = NPCFactory.factory.query();
+            QuestType type = QuestType.getRandomQuest();
+            questLog.add(new Quest(System.currentTimeMillis(), npc, type, (int) (Math.random() * 100),
+                    (int) (Math.random() * 10), ItemFactory.getItem(), random.nextBoolean()));
+            panel.append(Localization.lang.t("game.quest.new", npc.name(), type.name()), Colors.BRIGHT_CYAN);
+        }
+
         env.advanceTime(TIME_INCREMENT);
         if (env.hours() >= HOURS_PER_DAY) {
             env.hours(0f);

@@ -6,8 +6,6 @@ import com.soup.game.intf.Data;
 import com.soup.game.intf.Item;
 import com.soup.game.intf.World;
 
-import java.util.Set;
-
 /**
  * Represents a quest in the game world.
  * <p>
@@ -17,5 +15,5 @@ import java.util.Set;
  */
 @World(entity = "quest")
 @Data
-public record Quest(long id, NPC giver, String name, QuestType type,
-                    Set<Item> rewards, int required, boolean canRedo) {}
+public record Quest(long id, NPC giver, QuestType type, int reward,
+                    int required, Item item, boolean canRedo) {}
