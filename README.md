@@ -10,8 +10,9 @@
 </pre>
 
 ### About
-Farmlet is a terminal based roguelike game where you play as John, a city 
-boy become farmer who inherits his small plot of land from his late grandfather.
+Farmlet started as a terminal based (now Swing) roguelike game where you play 
+as a John, a city boy become farmer who inherits his small plot of land from 
+his late grandfather.
 
 ### Features
 Plant your crops, harvest them, make a profit, expand your farm, upgrade 
