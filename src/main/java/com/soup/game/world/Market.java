@@ -103,10 +103,13 @@ public class Market {
      * <p><b>Available Purchases:</b></p>
      * <ul>
      *     <li><b>Water</b> – increases the player's water supply by 1 unit.</li>
-     *     <li><b>Fertilizer</b> – adds 16 units each of {@link Fertilizer#SPEED} and {@link Fertilizer#YIELD} to inventory.</li>
+     *     <li><b>Fertilizer</b> – adds 16 units each of {@link Fertilizer#SPEED} and
+     *     {@link Fertilizer#YIELD} to inventory.</li>
      *     <li><b>For-loop Upgrade</b> – unlocks the {@link Upgrades#FOR_LOOP} command.</li>
-     *     <li><b>Plot Expansion</b> – increases the farm size by 2 tiles and initializes new tiles via {@link Farm#populate(int)}.</li>
-     *     <li><b>Upgrades Bundle</b> – unlocks {@link Upgrades#HARVEST_UPGRADE} and {@link Upgrades#PLANT_UPGRADE}.</li>
+     *     <li><b>Plot Expansion</b> – increases the farm size by 2 tiles and initializes
+     *     new tiles via {@link Farm#populate(int)}.</li>
+     *     <li><b>Upgrades Bundle</b> – unlocks {@link Upgrades#HARVEST_UPGRADE} and
+     *     {@link Upgrades#PLANT_UPGRADE}.</li>
      * </ul>
      *
      * <p><b>Behavior:</b></p>
@@ -145,7 +148,8 @@ public class Market {
         for(int i = 0; i < items.size(); i++) {
             Map.Entry<Integer, String> entry = items.get(i);
             String spaces = " ".repeat(maxPriceWidth - entry.getKey().toString().length() + 2);
-            panel.append((i + 1) + ". " + entry.getKey() + " gold" + spaces + entry.getValue(), Colors.MAGENTA);
+            panel.append((i + 1) + ". " + entry.getKey() + " gold" + spaces + entry.getValue(),
+                    Colors.MAGENTA);
         }
 
         panel.setCommandListener(line -> {
@@ -183,7 +187,8 @@ public class Market {
             case 1 -> {
                 player.take(cost);
                 player.water(1f);
-                panel.append(Localization.lang.t("market.bought", item, player.purse()), Colors.BRIGHT_GREEN);
+                panel.append(Localization.lang.t("market.bought", item,
+                        player.purse()), Colors.BRIGHT_GREEN);
             }
             case 2 -> {
                 player.take(cost);
@@ -191,23 +196,27 @@ public class Market {
                     player.inventory().add(Fertilizer.SPEED);
                     player.inventory().add(Fertilizer.YIELD);
                 }
-                panel.append(Localization.lang.t("market.bought", item, player.purse()), Colors.BRIGHT_GREEN);
+                panel.append(Localization.lang.t("market.bought", item,
+                        player.purse()), Colors.BRIGHT_GREEN);
             }
             case 3 -> {
                 player.take(cost);
                 player.add(Upgrades.FOR_LOOP);
-                panel.append(Localization.lang.t("market.bought", item, player.purse()), Colors.BRIGHT_GREEN);
+                panel.append(Localization.lang.t("market.bought", item,
+                        player.purse()), Colors.BRIGHT_GREEN);
             }
             case 4 -> {
                 player.take(cost);
                 farm.populate(farm.tiles().size() + 1);
-                panel.append(Localization.lang.t("market.bought.plot", farm.tiles().size(), player.purse()), Colors.BRIGHT_GREEN);
+                panel.append(Localization.lang.t("market.bought.plot", farm.tiles().size(),
+                        player.purse()), Colors.BRIGHT_GREEN);
             }
             case 5 -> {
                 player.take(cost);
                 player.add(Upgrades.HARVEST_UPGRADE);
                 player.add(Upgrades.PLANT_UPGRADE);
-                panel.append(Localization.lang.t("market.bought", item, player.purse()), Colors.BRIGHT_GREEN);
+                panel.append(Localization.lang.t("market.bought", item,
+                        player.purse()), Colors.BRIGHT_GREEN);
             }
         }
         log.debug("Bought= {}, {}", item,cost);
