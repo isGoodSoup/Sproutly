@@ -134,7 +134,9 @@ public class GameLoop implements CommandListener {
      */
     private void game(String command) {
         executor.run(command);
-        log.debug("Command executed: {}", command);
+        if(!command.isEmpty()) {
+            log.debug("Command executed: {}", command);
+        }
         env.advanceTime(TIME_INCREMENT);
         if(env.hours() >= HOURS_PER_DAY) {
             env.hours(0f);
