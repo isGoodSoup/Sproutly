@@ -5,6 +5,9 @@ build/
 !**/src/test/**/build/
 .kotlin
 
+### SLF4J ###
+logs
+
 ### IntelliJ IDEA ###
 .idea/
 *.iws
