@@ -297,7 +297,7 @@ public abstract class Animal {
 
         if(hunger > 60 || !wasFed || meals >= 2) {
             if(!wasHungryMessageSent) {
-                panel().append("\n" + Localization.lang.t("animal.hungry", getName(),
+                panel().append(Localization.lang.t("animal.hungry", getName(),
                         getLocalizedName()), Colors.BRIGHT_RED);
                 wasHungryMessageSent = true;
             }

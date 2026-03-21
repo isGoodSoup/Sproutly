@@ -133,7 +133,7 @@ public class Inventory {
 
         for(Map.Entry<Item, Integer> entry : player.inventory().getAll().entrySet()) {
             panel.append(entry.getKey().getName() + " x" + entry.getValue(),
-                    Colors.PURPLE);
+                    Colors.BRIGHT_MAGENTA);
         }
     }
 }
